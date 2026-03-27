@@ -1,0 +1,181 @@
+using System.IO;
+using System.Text;
+using System.Windows.Documents;
+using MeetingNotes.Models;
+using MeetingNotes.Services;
+using MeetingNotes.ViewModels;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+
+namespace MeetingNotes.Views;
+
+public partial class RecordingView : Page
+{
+    private readonly AudioCaptureService _audio;
+    private readonly DatabaseService _db;
+    private readonly AppSettings _settings;
+    private MeetingViewModel? _meetingVm;
+    private Meeting? _meeting;
+    private DispatcherTimer? _timer;
+    private DispatcherTimer? _dotTimer;
+    private DateTime _startTime;
+    private bool _isRecording;
+    private readonly double[] _waveformData = new double[40];
+
+    public event EventHandler<int>? RecordingStopped;
+
+    public RecordingView(AudioCaptureService audio, DatabaseService db, AppSettings settings)
+    {
+        InitializeComponent();
+        _audio = audio;
+        _db = db;
+        _settings = settings;
+        _audio.AudioLevelChanged += OnAudioLevel;
+        WaveformDisplay.ItemsSource = _waveformData;
+        InitializeDotAnimation();
+    }
+
+    public async void SetMeeting(MeetingViewModel vm, string folderName)
+    {
+        _meetingVm = vm;
+        MeetingTitleText.Text = vm.Title;
+        FolderBadgeText.Text = $"📁 {folderName}";
+
+        _meeting = await _db.GetMeetingAsync(vm.Id);
+        if (_meeting is not null)
+            await StartRecordingAsync();
+    }
+
+    private async Task StartRecordingAsync()
+    {
+        if (_meeting is null) return;
+
+        var ext = _settings.AudioFormat == "MP3" ? "mp3" : "wav";
+        var fileName = $"{_meeting.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
+        var outputPath = Path.Combine(_settings.RecordingsFolder, fileName);
+
+        _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate);
+
+        _meeting.Status           = MeetingStatus.Recording;
+        _meeting.RecordingStarted = DateTime.Now;
+        _meeting.AudioFilePath    = outputPath;
+
+        // Accumulate every file path so soft-delete can remove all of them
+        _meeting.AudioFilePaths = string.IsNullOrEmpty(_meeting.AudioFilePaths)
+            ? outputPath
+            : _meeting.AudioFilePaths + ";" + outputPath;
+
+        await _db.UpdateMeetingAsync(_meeting);
+
+        _startTime = DateTime.Now;
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _timer.Tick += (_, _) =>
+        {
+            var elapsed = DateTime.Now - _startTime;
+            TimerText.Text = elapsed.ToString(@"hh\:mm\:ss");
+        };
+        _timer.Start();
+        _isRecording = true;
+    }
+
+    private async void StopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isRecording || _meeting is null) return;
+
+        StopButton.IsEnabled = false;
+        _timer?.Stop();
+        _dotTimer?.Stop();
+
+        // Run WAV→MP3 conversion on background thread so UI doesn't freeze
+        await Task.Run(() => _audio.StopRecording());
+
+        _meeting.RecordingEnded = DateTime.Now;
+        _meeting.Status = MeetingStatus.Processing;
+
+        if (!string.IsNullOrWhiteSpace(QuickNotesBox.Text))
+            _meeting.MyNotes = AppendQuickNotes(_meeting.MyNotes, QuickNotesBox.Text);
+
+        await _db.UpdateMeetingAsync(_meeting);
+
+        _isRecording = false;
+        RecordingStopped?.Invoke(this, _meeting.Id);
+    }
+
+    private void OnAudioLevel(object? sender, float level)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            // Shift waveform left and add new value
+            for (int i = 0; i < _waveformData.Length - 1; i++)
+                _waveformData[i] = _waveformData[i + 1];
+            _waveformData[^1] = Math.Max(4, level * 100);
+            WaveformDisplay.Items.Refresh();
+        });
+    }
+
+    private void InitializeDotAnimation()
+    {
+        _dotTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+        bool visible = true;
+        _dotTimer.Tick += (_, _) =>
+        {
+            RecDot.Opacity = visible ? 1 : 0;
+            visible = !visible;
+        };
+        _dotTimer.Start();
+    }
+
+    /// <summary>
+    /// Appends plain quick-notes text to existing notes (which may be RTF or plain text).
+    /// Returns RTF when existing content is RTF; plain text otherwise.
+    /// </summary>
+    private static string AppendQuickNotes(string? existing, string quickNotes)
+    {
+        if (string.IsNullOrWhiteSpace(existing))
+            return quickNotes;
+
+        // Existing notes are plain text — simple concatenation
+        if (!existing.TrimStart().StartsWith("{\\rtf", StringComparison.Ordinal))
+            return existing + "\n\n" + quickNotes;
+
+        // Existing notes are RTF — load into a FlowDocument, append, re-serialize
+        try
+        {
+            var doc = new FlowDocument();
+            using (var inStream = new MemoryStream(Encoding.UTF8.GetBytes(existing)))
+            {
+                var inRange = new TextRange(doc.ContentStart, doc.ContentEnd);
+                inRange.Load(inStream, System.Windows.DataFormats.Rtf);
+            }
+            doc.Blocks.Add(new Paragraph(new Run(quickNotes)));
+
+            using var outStream = new MemoryStream();
+            var outRange = new TextRange(doc.ContentStart, doc.ContentEnd);
+            outRange.Save(outStream, System.Windows.DataFormats.Rtf);
+            return Encoding.UTF8.GetString(outStream.ToArray());
+        }
+        catch
+        {
+            // If RTF manipulation fails fall back to simple concat
+            return existing + "\n\n" + quickNotes;
+        }
+    }
+
+    private void Page_Unloaded(object sender, RoutedEventArgs e)
+    {
+        _audio.AudioLevelChanged -= OnAudioLevel;
+        _timer?.Stop();
+        _dotTimer?.Stop();
+
+        // Safety net: if the frame was navigated away while a recording was still
+        // active (e.g. WPF back/forward journal), stop the audio service so
+        // IsRecording never gets stuck as true.
+        if (_isRecording)
+        {
+            _isRecording = false;
+            Task.Run(() => _audio.StopRecording());
+        }
+    }
+}

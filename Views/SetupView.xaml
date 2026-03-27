@@ -1,0 +1,72 @@
+<Window x:Class="MeetingNotes.Views.SetupView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Title="Meeting Notes — First Run Setup"
+        Height="460" Width="520"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="#FF202020">
+    <Window.Resources>
+        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
+    </Window.Resources>
+
+    <StackPanel Margin="48,40">
+        <TextBlock Text="🎙️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+        <TextBlock Text="Welcome to Meeting Notes"
+                   Foreground="White" FontSize="22" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+        <TextBlock Text="We need to download the Whisper transcription model before you start."
+                   Foreground="#FF888888" FontSize="13" TextAlignment="Center"
+                   TextWrapping="Wrap" HorizontalAlignment="Center"
+                   Margin="0,0,0,40"/>
+
+        <!-- Model info -->
+        <Border Background="#FF252525" CornerRadius="8" Padding="20,16" Margin="0,0,0,24">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Whisper Base Model" Foreground="White"
+                               FontSize="14" FontWeight="Medium"/>
+                    <TextBlock Text="Good accuracy · Downloads once · Runs locally"
+                               Foreground="#FF666666" FontSize="12" Margin="0,4,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="~142 MB" Foreground="#FF888888"
+                           FontSize="13" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Progress -->
+        <StackPanel x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,0,0,20">
+            <Grid Margin="0,0,0,8">
+                <TextBlock x:Name="ProgressLabel" Text="Downloading..."
+                           Foreground="#FF888888" FontSize="12"/>
+                <TextBlock x:Name="ProgressPercent" Text="0%"
+                           Foreground="#FF888888" FontSize="12"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+            <Border Background="#FF1A1A1A" CornerRadius="4" Height="6">
+                <Border x:Name="ProgressBar" Background="#FF0078D4"
+                        CornerRadius="4" HorizontalAlignment="Left" Width="0"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <Button x:Name="DownloadButton" Content="Download &amp; Get Started"
+                Style="{StaticResource PrimaryButton}"
+                Padding="0,12" FontSize="14"
+                Click="DownloadButton_Click"/>
+
+        <TextBlock x:Name="StatusText" Foreground="#FF4CAF50"
+                   FontSize="12" HorizontalAlignment="Center"
+                   Margin="0,16,0,0" Visibility="Collapsed"/>
+
+        <TextBlock Text="This only happens once. The model is saved locally and reused."
+                   Foreground="#FF444444" FontSize="11" TextAlignment="Center"
+                   TextWrapping="Wrap" Margin="0,20,0,0"/>
+    </StackPanel>
+</Window>

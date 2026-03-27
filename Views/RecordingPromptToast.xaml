@@ -1,0 +1,84 @@
+<Window x:Class="MeetingNotes.Views.RecordingPromptToast"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Width="340" Height="96"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
+    </Window.Resources>
+
+    <!-- Outer border provides rounded corners + drop-shadow -->
+    <Border x:Name="ToastCard" CornerRadius="10" Background="#FF272727"
+            BorderBrush="#FF404040" BorderThickness="1"
+            MouseDown="ToastCard_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect Color="#FF000000" BlurRadius="28"
+                              ShadowDepth="5" Opacity="0.6"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="3"/>
+            </Grid.RowDefinitions>
+
+            <!-- Content row -->
+            <Grid Grid.Row="0" Margin="14,12,14,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Recording-dot icon -->
+                <Border Width="38" Height="38" CornerRadius="19"
+                        Background="#FF1E2D4A" VerticalAlignment="Center">
+                    <Grid>
+                        <!-- Outer pulse ring -->
+                        <Ellipse Width="22" Height="22" HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Fill="Transparent" Stroke="#440078D4" StrokeThickness="4"/>
+                        <!-- Inner blue dot -->
+                        <Ellipse Width="12" Height="12" HorizontalAlignment="Center"
+                                 VerticalAlignment="Center" Fill="#FF0078D4"/>
+                    </Grid>
+                </Border>
+
+                <!-- Text block -->
+                <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="AppNameText" Foreground="White"
+                                   FontSize="13" FontWeight="SemiBold" FontFamily="Segoe UI"/>
+                        <TextBlock Text=" is active" Foreground="#FFCCCCCC"
+                                   FontSize="13" FontFamily="Segoe UI"/>
+                    </StackPanel>
+                    <TextBlock Text="Want to start recording?"
+                               Foreground="#FF888888" FontSize="11.5"
+                               FontFamily="Segoe UI" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Record" Style="{StaticResource PrimaryButton}"
+                            Padding="12,5" FontSize="12"
+                            Click="StartButton_Click" Margin="0,0,5,0"/>
+                    <Button Content="✕" Style="{StaticResource GhostButton}"
+                            Width="26" Padding="0" FontSize="11"
+                            Click="DismissButton_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Countdown progress bar (drains left-to-right over 8 seconds) -->
+            <Border Grid.Row="1" CornerRadius="0,0,10,10" Background="#FF333333">
+                <Rectangle x:Name="CountdownBar" Height="3"
+                           HorizontalAlignment="Left" Fill="#FF0078D4"
+                           RadiusX="0" RadiusY="0"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

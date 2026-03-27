@@ -1,0 +1,132 @@
+<Page x:Class="MeetingNotes.Views.RecordingView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
+      Background="#FF202020">
+    <Page.Resources>
+        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Header -->
+            <RowDefinition Height="Auto"/>  <!-- Controls (timer / waveform / stop) -->
+            <RowDefinition Height="*"/>     <!-- Quick Notes fills remaining space -->
+        </Grid.RowDefinitions>
+
+        <!-- Header — compact -->
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D" Padding="16,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border CornerRadius="14" Padding="10,4" Background="#FF3D1A1A">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="RecDot" Width="7" Height="7" Fill="#FFEF5350"
+                                 VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="REC" Foreground="#FFEF5350" FontSize="11" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Grid.Column="1" x:Name="MeetingTitleText"
+                           Foreground="White" FontSize="15" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="12,0"/>
+                <Border Grid.Column="2" Background="#FF2A2A2A" CornerRadius="4" Padding="8,3">
+                    <TextBlock x:Name="FolderBadgeText" Foreground="#FF888888" FontSize="11"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Controls — compact centre section -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,14,0,10">
+
+            <!-- Timer -->
+            <TextBlock x:Name="TimerText" Text="00:00:00"
+                       Foreground="White" FontSize="34" FontWeight="Light"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Recording in progress" Foreground="#FF555555"
+                       FontSize="11" HorizontalAlignment="Center"
+                       Margin="0,2,0,10"/>
+
+            <!-- Waveform -->
+            <ItemsControl x:Name="WaveformDisplay" Margin="0,0,0,10">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Rectangle Width="5" Height="{Binding}" Margin="2,0"
+                                   Fill="#FF1E90FF" RadiusX="2" RadiusY="2"
+                                   VerticalAlignment="Center"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Audio source badges -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,14">
+                <Border Background="#FF151F15" BorderBrush="#FF1A3D1A" BorderThickness="1"
+                        CornerRadius="6" Padding="12,5" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="6" Height="6" Fill="#FF4CAF50"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="System Audio" Foreground="#FF4CAF50" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="MicBorder" Background="#FF151F15" BorderBrush="#FF1A3D1A"
+                        BorderThickness="1" CornerRadius="6" Padding="12,5">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="6" Height="6" Fill="#FF4CAF50"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Microphone" Foreground="#FF4CAF50" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Stop button — smaller -->
+            <Button x:Name="StopButton" Width="50" Height="50"
+                    HorizontalAlignment="Center" Click="StopButton_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="StopBorder" Width="50" Height="50"
+                                CornerRadius="25" Background="#FFC42B1C">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FFC42B1C" BlurRadius="14"
+                                                  ShadowDepth="0" Opacity="0.45"/>
+                            </Border.Effect>
+                            <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="StopBorder" Property="Background" Value="#FFE03B2A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <TextBlock Text="Click to stop recording" Foreground="#FF555555"
+                       FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+
+        </StackPanel>
+
+        <!-- Quick Notes — fills all remaining space -->
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#FF2D2D2D" Padding="20,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="QUICK NOTES" Foreground="#FF555555" FontSize="11"
+                           FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBox Grid.Row="1" x:Name="QuickNotesBox"
+                         Style="{StaticResource DarkTextBox}"
+                         AcceptsReturn="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         ui:ControlHelper.PlaceholderText="Jot down anything while you record — saved with the meeting..."/>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Page>
