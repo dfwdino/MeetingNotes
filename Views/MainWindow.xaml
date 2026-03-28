@@ -35,6 +35,8 @@
         <!-- SIDEBAR                                -->
         <!-- ══════════════════════════════════════ -->
         <Grid Grid.Column="0" Background="#FF1E1E1E">
+            <!-- Full sidebar — visible when expanded -->
+            <Grid x:Name="SidebarContent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -89,11 +91,19 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="🗑" FontSize="15" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="Trash"
                                        Foreground="#FF888888" FontSize="13.5"
                                        Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            <!-- Trash count badge -->
+                            <Border x:Name="TrashCountBadge" Grid.Column="2"
+                                    CornerRadius="10" Padding="6,1"
+                                    Background="#FF3A1A1A" Visibility="Collapsed">
+                                <TextBlock x:Name="TrashCountText" FontSize="11"
+                                           Foreground="#FFEF5350"/>
+                            </Border>
                         </Grid>
                     </Border>
 
@@ -126,7 +136,9 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
+
                                         <!-- Active indicator -->
                                         <Border Width="3" HorizontalAlignment="Left"
                                                 Margin="-16,0,0,0" CornerRadius="0,2,2,0">
@@ -141,21 +153,54 @@
                                                 </Style>
                                             </Border.Style>
                                         </Border>
+
                                         <TextBlock Text="📁" FontSize="15" VerticalAlignment="Center"/>
+
+                                        <!-- Folder name — read mode -->
                                         <TextBlock Grid.Column="1" Text="{Binding Name}"
                                                    FontSize="13.5" Margin="10,0,0,0"
                                                    VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="#FFCCCCCC"/>
+                                                    <Setter Property="Visibility" Value="Visible"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                             <Setter Property="Foreground" Value="White"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
+
+                                        <!-- Folder name — edit mode (inline rename) -->
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="13.5" FontFamily="Segoe UI"
+                                                 Foreground="#FFE0E0E0" Background="#FF1A1A1A"
+                                                 BorderBrush="#FF0078D4" BorderThickness="1"
+                                                 Padding="3,1" Margin="8,0,4,0"
+                                                 VerticalAlignment="Center"
+                                                 Tag="{Binding}"
+                                                 KeyDown="FolderNameBox_KeyDown"
+                                                 LostFocus="FolderNameBox_LostFocus"
+                                                 IsVisibleChanged="FolderNameBox_VisibleChanged">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+
+                                        <!-- Meeting count badge -->
                                         <Border Grid.Column="2" CornerRadius="10" Padding="6,1">
                                             <Border.Style>
                                                 <Style TargetType="Border">
@@ -180,14 +225,40 @@
                                                 </TextBlock.Style>
                                             </TextBlock>
                                         </Border>
+
+                                        <!-- Rename button — appears on hover -->
+                                        <Button Grid.Column="3" Content="✏" FontSize="12"
+                                                VerticalAlignment="Center" Padding="5,2"
+                                                Cursor="Hand" Foreground="#FFAAAAAA"
+                                                Tag="{Binding}" Click="RenameFolder_Click">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Visibility" Value="Hidden"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=FolderCardBorder}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+
                                         <!-- Delete button — appears on hover -->
-                                        <Button Grid.Column="3"
-                                                Content="×" FontSize="16"
-                                                VerticalAlignment="Center"
-                                                Padding="6,2" Cursor="Hand"
-                                                Foreground="#FFAAAAAA"
-                                                Tag="{Binding}"
-                                                Click="DeleteFolder_Click">
+                                        <Button Grid.Column="4" Content="×" FontSize="16"
+                                                VerticalAlignment="Center" Padding="6,2"
+                                                Cursor="Hand" Foreground="#FFAAAAAA"
+                                                Tag="{Binding}" Click="DeleteFolder_Click">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Visibility" Value="Hidden"/>
@@ -229,6 +300,30 @@
                             Click="AboutButton_Click"/>
                 </Grid>
             </Border>
+            </Grid><!-- /SidebarContent -->
+
+            <!-- Collapsed strip — 32 px wide, shown instead of full sidebar -->
+            <Border x:Name="SidebarCollapsedStrip" Visibility="Collapsed" Background="#FF1E1E1E">
+                <Button VerticalAlignment="Top" HorizontalAlignment="Stretch"
+                        Height="36" Margin="2,8,2,0"
+                        ToolTip="Show Folders"
+                        Click="ExpandSidebarButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bg" Background="#FF2D3A4A" CornerRadius="4"
+                                    BorderBrush="#FF3A5A7A" BorderThickness="1">
+                                <TextBlock Text="▶" Foreground="#FF5B9BD5" FontSize="11"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bg" Property="Background" Value="#FF3A4D60"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Border>
         </Grid>
 
         <!-- ══════════════════════════════════════ -->
@@ -247,26 +342,35 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="FolderTitleText" Text="All Meetings"
                            Foreground="White" FontSize="16" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="＋  New"
+                <Button x:Name="NewMeetingButton" Grid.Column="1" Content="＋  New"
                         Style="{StaticResource PrimaryButton}"
                         Padding="10,5" FontSize="12" Margin="0,0,6,0"
+                        Visibility="Collapsed"
                         Click="NewMeetingButton_Click"/>
+                <!-- Search toggle button -->
+                <Button x:Name="SearchToggleButton" Grid.Column="2"
+                        Content="🔍" ToolTip="Search meetings"
+                        Style="{StaticResource GhostButton}"
+                        Padding="6,5" FontSize="13" Margin="0,0,2,0"
+                        Click="SearchToggle_Click"/>
                 <!-- Collapse panel button -->
-                <Button x:Name="CollapseListButton" Grid.Column="2"
+                <Button x:Name="CollapseListButton" Grid.Column="3"
                         Content="◀" ToolTip="Hide meeting list"
                         Style="{StaticResource GhostButton}"
                         Padding="6,5" FontSize="13" Foreground="#FF888888"
                         Click="CollapseListButton_Click"/>
             </Grid>
 
-            <!-- Search -->
-            <Border Grid.Row="1" Margin="12,0,12,10">
+            <!-- Search — hidden by default, toggled by 🔍 button -->
+            <Border x:Name="SearchRow" Grid.Row="1" Margin="12,0,12,10"
+                    Visibility="Collapsed">
                 <TextBox x:Name="SearchBox" Style="{StaticResource DarkTextBox}"
-                         ui:ControlHelper.PlaceholderText="🔍  Search meetings..."
+                         ui:ControlHelper.PlaceholderText="Search meetings..."
                          TextChanged="SearchBox_TextChanged"/>
             </Border>
 
@@ -351,32 +455,13 @@
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
-                                    <!-- Normal: soft-delete button (hover) -->
-                                    <Button Grid.Column="1"
-                                            Content="×" FontSize="16"
-                                            VerticalAlignment="Center"
-                                            Padding="8,4" Cursor="Hand"
-                                            Foreground="#FFAAAAAA"
-                                            Tag="{Binding}"
-                                            Click="DeleteMeeting_Click">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
+                                    <!-- Normal: Move + Delete buttons (appear on hover) -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
                                                 <Setter Property="Visibility" Value="Hidden"/>
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="BorderThickness" Value="0"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="Transparent" Padding="{TemplateBinding Padding}">
-                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsDeleted}" Value="True">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
                                                     <MultiDataTrigger>
                                                         <MultiDataTrigger.Conditions>
                                                             <Condition Binding="{Binding IsMouseOver, ElementName=MeetingCardBorder}" Value="True"/>
@@ -386,8 +471,34 @@
                                                     </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </Button.Style>
-                                    </Button>
+                                        </StackPanel.Style>
+                                        <!-- Move to folder -->
+                                        <Button Content="📁" FontSize="13" ToolTip="Move to folder..."
+                                                Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"
+                                                Tag="{Binding}" Click="MoveMeeting_Click"
+                                                Background="Transparent" BorderThickness="0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <!-- Delete -->
+                                        <Button Content="×" FontSize="16"
+                                                Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"
+                                                Tag="{Binding}" Click="DeleteMeeting_Click"
+                                                Background="Transparent" BorderThickness="0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
 
                                     <!-- Trash: Restore + Delete Forever buttons -->
                                     <StackPanel Grid.Column="1" Orientation="Horizontal"
@@ -453,43 +564,6 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
-
-        <!-- ══════════════════════════════════════════════════════════════ -->
-        <!-- PERSISTENT EXPAND BUTTONS — live outside collapsible panels   -->
-        <!-- so they stay visible even when their panel is hidden          -->
-        <!-- ══════════════════════════════════════════════════════════════ -->
-
-        <!-- Shows in meeting list column when sidebar is collapsed -->
-        <Button x:Name="ExpandSidebarButton"
-                Grid.Column="2"
-                ToolTip="Show Folders"
-                Visibility="Collapsed"
-                VerticalAlignment="Top"
-                HorizontalAlignment="Stretch"
-                Height="36"
-                Margin="6,8,6,0"
-                Panel.ZIndex="10"
-                Click="ExpandSidebarButton_Click">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="bg" Background="#FF2D3A4A" CornerRadius="6"
-                            BorderBrush="#FF3A5A7A" BorderThickness="1">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="▶" Foreground="#FF5B9BD5" FontSize="12"
-                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Folders" Foreground="#FFCCCCCC"
-                                       FontSize="12" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bg" Property="Background" Value="#FF3A4D60"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Button.Template>
-        </Button>
 
         <!-- Shows in content column when meeting list is collapsed -->
         <Button x:Name="ExpandListButton"

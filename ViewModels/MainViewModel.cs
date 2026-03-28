@@ -59,6 +59,29 @@ public partial class MainViewModel : BaseViewModel
         await SelectFolderAsync(vm);
     }
 
+    public async Task RenameFolderAsync(FolderViewModel folder, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName)) return;
+        await _db.RenameFolderAsync(folder.Id, newName);
+        folder.Name = newName;
+        folder.IsEditing = false;
+    }
+
+    public async Task MoveMeetingAsync(MeetingViewModel meeting, int targetFolderId)
+    {
+        await _db.MoveMeetingAsync(meeting.Id, targetFolderId);
+        Meetings.Remove(meeting);
+
+        // Update meeting counts on both folders
+        var target = Folders.FirstOrDefault(f => f.Id == targetFolderId);
+        if (target is not null) target.MeetingCount++;
+        if (SelectedFolder is not null)
+            SelectedFolder.MeetingCount = Math.Max(0, SelectedFolder.MeetingCount - 1);
+
+        if (SelectedMeeting?.Id == meeting.Id)
+            SelectedMeeting = null;
+    }
+
     [RelayCommand]
     public async Task DeleteFolderAsync(FolderViewModel folder)
     {

@@ -62,6 +62,14 @@ public class DatabaseService
         await _db.SaveChangesAsync();
     }
 
+    public async Task MoveMeetingAsync(int meetingId, int targetFolderId)
+    {
+        var meeting = await _db.Meetings.FindAsync(meetingId);
+        if (meeting is null) return;
+        meeting.FolderId = targetFolderId;
+        await _db.SaveChangesAsync();
+    }
+
     public async Task DeleteFolderAsync(int id)
     {
         // Soft-delete all meetings in the folder first

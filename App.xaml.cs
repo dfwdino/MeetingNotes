@@ -7,7 +7,6 @@ using MeetingNotes.Models;
 using MeetingNotes.Services;
 using MeetingNotes.Views;
 using MeetingNotes.ViewModels;
-using MeetingNotes.Views;
 using System.Windows;
 using System.Windows.Forms;
 

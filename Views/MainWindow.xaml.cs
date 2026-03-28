@@ -9,6 +9,8 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private bool _listPanelCollapsed;
     private bool _sidebarCollapsed;
+    private bool _searchVisible;
+    private string _folderNameBeforeEdit = string.Empty;
 
     public MainWindow(MainViewModel vm)
     {
@@ -25,6 +27,10 @@ public partial class MainWindow : Window
         FolderList.ItemsSource = _vm.Folders;
         MeetingList.ItemsSource = _vm.Meetings;
         UpdateFolderTitle();
+        await RefreshTrashCountAsync();
+        // Show New button only when a folder is selected (set by LoadAsync → SelectFolderAsync)
+        NewMeetingButton.Visibility = _vm.SelectedFolder is not null
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private bool IsRecordingActive() =>
@@ -39,6 +45,7 @@ public partial class MainWindow : Window
         {
             await _vm.SelectFolderAsync(folder);
             MeetingList.ItemsSource = _vm.Meetings;
+            NewMeetingButton.Visibility = Visibility.Visible;
             UpdateFolderTitle();
             ShowEmptyState();
         }
@@ -48,6 +55,7 @@ public partial class MainWindow : Window
     {
         foreach (var f in _vm.Folders) f.IsSelected = false;
         FolderTitleText.Text = "All Meetings";
+        NewMeetingButton.Visibility = Visibility.Collapsed;
         ShowEmptyState();
     }
 
@@ -56,6 +64,7 @@ public partial class MainWindow : Window
         if (IsRecordingActive()) return;
         foreach (var f in _vm.Folders) f.IsSelected = false;
         FolderTitleText.Text = "🗑  Trash";
+        NewMeetingButton.Visibility = Visibility.Collapsed;
         await _vm.LoadTrashAsync();
         MeetingList.ItemsSource = _vm.Meetings;
         ShowEmptyState();
@@ -68,6 +77,7 @@ public partial class MainWindow : Window
         {
             await _vm.HideFromTrashAsync(meeting);
             MeetingList.ItemsSource = _vm.Meetings;
+            await RefreshTrashCountAsync();
             ShowEmptyState();
         }
     }
@@ -87,6 +97,7 @@ public partial class MainWindow : Window
             {
                 await _vm.RestoreMeetingAsync(meeting);
                 MeetingList.ItemsSource = _vm.Meetings;
+                await RefreshTrashCountAsync();
                 ShowEmptyState();
             }
         }
@@ -112,6 +123,7 @@ public partial class MainWindow : Window
             await _vm.AddFolderAsync(dialog.FolderName);
             FolderList.ItemsSource = _vm.Folders;
             MeetingList.ItemsSource = _vm.Meetings;
+            NewMeetingButton.Visibility = Visibility.Visible; // new folder auto-selects
             UpdateFolderTitle();
         }
     }
@@ -157,6 +169,8 @@ public partial class MainWindow : Window
                 await _vm.DeleteFolderAsync(folder);
                 FolderList.ItemsSource = _vm.Folders;
                 MeetingList.ItemsSource = _vm.Meetings;
+                NewMeetingButton.Visibility = Visibility.Collapsed;
+                await RefreshTrashCountAsync();
                 ShowEmptyState();
             }
         }
@@ -178,6 +192,7 @@ public partial class MainWindow : Window
             {
                 await _vm.DeleteMeetingAsync(meeting);
                 MeetingList.ItemsSource = _vm.Meetings;
+                await RefreshTrashCountAsync();
                 ShowEmptyState();
             }
         }
@@ -208,12 +223,110 @@ public partial class MainWindow : Window
         ContentFrame.Visibility = Visibility.Visible;
     }
 
+    // ── Search toggle ─────────────────────────────────────────────────
+    private void SearchToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _searchVisible = !_searchVisible;
+        SearchRow.Visibility = _searchVisible ? Visibility.Visible : Visibility.Collapsed;
+        if (_searchVisible)
+            SearchBox.Focus();
+        else
+        {
+            SearchBox.Text = string.Empty;
+            MeetingList.ItemsSource = _vm.Meetings;
+        }
+    }
+
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
-        var query = SearchBox.Text.ToLower();
-        var filtered = _vm.Meetings.Where(m =>
-            m.Title.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
-        MeetingList.ItemsSource = filtered;
+        var query = SearchBox.Text;
+        MeetingList.ItemsSource = string.IsNullOrWhiteSpace(query)
+            ? _vm.Meetings
+            : _vm.Meetings.Where(m => m.Title.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    // ── Folder rename ──────────────────────────────────────────────────
+    private void RenameFolder_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is System.Windows.Controls.Button btn && btn.Tag is FolderViewModel folder)
+        {
+            _folderNameBeforeEdit = folder.Name;
+            folder.IsEditing = true;
+        }
+    }
+
+    private void FolderNameBox_VisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBox tb && (bool)e.NewValue)
+        {
+            tb.Focus();
+            tb.SelectAll();
+        }
+    }
+
+    private async void FolderNameBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBox tb && tb.Tag is FolderViewModel folder)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                e.Handled = true;
+                await _vm.RenameFolderAsync(folder, tb.Text);
+                if (_vm.SelectedFolder?.Id == folder.Id)
+                    UpdateFolderTitle();
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                folder.Name = _folderNameBeforeEdit;
+                folder.IsEditing = false;
+            }
+        }
+    }
+
+    private void FolderNameBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBox tb && tb.Tag is FolderViewModel folder)
+        {
+            folder.Name = _folderNameBeforeEdit;
+            folder.IsEditing = false;
+        }
+    }
+
+    // ── Move meeting ───────────────────────────────────────────────────
+    private void MoveMeeting_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not System.Windows.Controls.Button btn ||
+            btn.Tag is not MeetingViewModel meeting) return;
+
+        var menu = new System.Windows.Controls.ContextMenu();
+        foreach (var folder in _vm.Folders.Where(f => f.Id != _vm.SelectedFolder?.Id))
+        {
+            var item = new System.Windows.Controls.MenuItem
+            {
+                Header = folder.Name,
+                Tag    = (meeting, folder)
+            };
+            item.Click += async (_, _) =>
+            {
+                var (m, f) = ((MeetingViewModel, FolderViewModel))item.Tag!;
+                await _vm.MoveMeetingAsync(m, f.Id);
+                MeetingList.ItemsSource = _vm.Meetings;
+                ShowEmptyState();
+            };
+            menu.Items.Add(item);
+        }
+
+        if (menu.Items.Count == 0)
+        {
+            menu.Items.Add(new System.Windows.Controls.MenuItem
+                { Header = "(No other folders)", IsEnabled = false });
+        }
+
+        menu.PlacementTarget = btn;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     private void ShowMeetingDetail(MeetingViewModel meeting)
@@ -291,16 +404,27 @@ public partial class MainWindow : Window
         _sidebarCollapsed = collapse;
         if (MeetingListPanel.Parent is System.Windows.Controls.Grid mainGrid)
         {
-            mainGrid.ColumnDefinitions[0].Width = collapse ? new GridLength(0) : new GridLength(220);
-            mainGrid.ColumnDefinitions[1].Width = collapse ? new GridLength(0) : new GridLength(1);
+            // Collapse to a thin 32px strip so the expand button stays visible
+            // without overlapping the meeting list panel at all
+            mainGrid.ColumnDefinitions[0].Width = collapse ? new GridLength(32) : new GridLength(220);
+            mainGrid.ColumnDefinitions[1].Width = new GridLength(1);
         }
-        ExpandSidebarButton.Visibility = collapse ? Visibility.Visible : Visibility.Collapsed;
+        SidebarContent.Visibility        = collapse ? Visibility.Collapsed : Visibility.Visible;
+        SidebarCollapsedStrip.Visibility = collapse ? Visibility.Visible   : Visibility.Collapsed;
     }
 
     private void ShowEmptyState()
     {
         EmptyState.Visibility = Visibility.Visible;
         ContentFrame.Visibility = Visibility.Collapsed;
+    }
+
+    private async Task RefreshTrashCountAsync()
+    {
+        var deleted = await App.GetService<Services.DatabaseService>().GetDeletedMeetingsAsync();
+        int count = deleted.Count;
+        TrashCountText.Text = count.ToString();
+        TrashCountBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -320,6 +444,7 @@ public partial class MainWindow : Window
         {
             await _vm.SelectFolderAsync(_vm.Folders[0]);
             MeetingList.ItemsSource = _vm.Meetings;
+            NewMeetingButton.Visibility = Visibility.Visible;
             UpdateFolderTitle();
         }
 
