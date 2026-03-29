@@ -419,6 +419,9 @@ public partial class MainWindow : Window
         ContentFrame.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>Called by SettingsView Cancel when there's no Frame back-history.</summary>
+    internal void GoBackFromSettings() => ShowEmptyState();
+
     private async Task RefreshTrashCountAsync()
     {
         var deleted = await App.GetService<Services.DatabaseService>().GetDeletedMeetingsAsync();

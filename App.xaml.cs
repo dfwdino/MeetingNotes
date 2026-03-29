@@ -27,6 +27,9 @@ public partial class App : System.Windows.Application
         // Load settings FIRST — DB path, audio folder, etc. all come from here
         var settings = SettingsService.Load();
 
+        // Apply theme before any UI is created so everything starts correctly
+        ApplyTheme(settings.Theme);
+
         _services = BuildServices(settings);
 
         // Copy loaded values into the DI singleton so all services see them
@@ -38,7 +41,7 @@ public partial class App : System.Windows.Application
 
         // Configure Ollama with saved settings
         var ollama = GetService<OllamaService>();
-        ollama.Configure(settings.OllamaServerUrl, settings.OllamaModel);
+        ollama.Configure(settings.OllamaServerUrl, settings.OllamaDefaultModel);
 
         // Check if Whisper model exists — show setup if not
         var whisperModelPath = Path.Combine(settings.WhisperCacheFolder,
@@ -214,6 +217,32 @@ public partial class App : System.Windows.Application
             if (TrayIcon.ContextMenuStrip?.Items[1] is System.Windows.Forms.ToolStripItem item)
                 item.Text = "Not recording";
         }
+    }
+
+    internal static void ApplyTheme(string theme)
+    {
+        // 1. Switch ModernWPF system controls
+        ModernWpf.ThemeManager.Current.ApplicationTheme = theme switch
+        {
+            "Light"  => ModernWpf.ApplicationTheme.Light,
+            "System" => (ModernWpf.ApplicationTheme?)null,
+            _        => ModernWpf.ApplicationTheme.Dark
+        };
+
+        // 2. Swap our custom theme ResourceDictionary in App.Resources
+        bool isLight = theme == "Light";
+        var newThemeUri = new Uri(
+            isLight ? "/Themes/LightTheme.xaml" : "/Themes/DarkTheme.xaml",
+            UriKind.Relative);
+
+        var dicts = Current.Resources.MergedDictionaries;
+        var existing = dicts.FirstOrDefault(d =>
+            d.Source?.OriginalString.EndsWith("Theme.xaml", StringComparison.OrdinalIgnoreCase) == true);
+
+        if (existing != null)
+            dicts[dicts.IndexOf(existing)] = new ResourceDictionary { Source = newThemeUri };
+        else
+            dicts.Add(new ResourceDictionary { Source = newThemeUri });
     }
 
     protected override void OnExit(ExitEventArgs e)

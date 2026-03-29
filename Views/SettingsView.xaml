@@ -2,10 +2,8 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.modernwpf.com/2019"
-      Background="#FF202020">
-    <Page.Resources>
-        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
-    </Page.Resources>
+      Background="{DynamicResource AppBackgroundBrush}"
+      Loaded="Page_Loaded">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -15,7 +13,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D" Padding="24,16">
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SeparatorBrush}" Padding="24,16">
             <TextBlock Text="Settings" Foreground="White" FontSize="20" FontWeight="SemiBold"/>
         </Border>
 
@@ -35,14 +33,14 @@
                     <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="Model" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="WhisperModelBox"
-                                  Background="#FF1A1A1A" Foreground="#FFE0E0E0"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
                         <TextBlock Text="Live Transcription Chunk" Foreground="#FF888888"
                                    FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="ChunkIntervalBox"
-                                  Background="#FF1A1A1A" Foreground="#FFE0E0E0"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                 </Grid>
@@ -55,13 +53,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="WhisperFolderBox" Style="{StaticResource DarkTextBox}"/>
-                        <Button Grid.Column="1" Content="Browse" Style="{StaticResource GhostButton}"
+                        <TextBox x:Name="WhisperFolderBox" Style="{DynamicResource DarkTextBox}"/>
+                        <Button Grid.Column="1" Content="Browse" Style="{DynamicResource GhostButton}"
                                 Margin="8,0,0,0" Click="BrowseWhisperFolder_Click"/>
                     </Grid>
                 </StackPanel>
 
-                <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,20"/>
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── OLLAMA ──────────────────────────────────── -->
                 <TextBlock Text="OLLAMA  (Summarization &amp; Chat)" Foreground="#FF0078D4"
@@ -74,33 +72,73 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="Server URL" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
-                        <TextBox x:Name="OllamaUrlBox" Style="{StaticResource DarkTextBox}"/>
+                        <TextBox x:Name="OllamaUrlBox" Style="{DynamicResource DarkTextBox}"/>
                     </StackPanel>
                     <Button Grid.Column="1" Content="Test Connection"
-                            Style="{StaticResource GhostButton}"
+                            Style="{DynamicResource GhostButton}"
                             Margin="8,18,0,0" Click="TestOllama_Click"/>
                 </Grid>
 
                 <TextBlock x:Name="OllamaStatusText" Foreground="#FF888888"
                            FontSize="12" Margin="0,0,0,12"/>
 
+                <!-- Default model display + validation -->
+                <Border Margin="0,0,0,6" Padding="10,8" CornerRadius="4" Background="{DynamicResource InputBackgroundBrush}"
+                        BorderBrush="#FF3A3A3A" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Default Model:" Foreground="#FF888888" FontSize="12"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="DefaultModelLabel" Grid.Column="1"
+                                   FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock x:Name="DefaultModelStatus" Grid.Column="2"
+                                   FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- Warning when default not installed -->
+                <Border x:Name="DefaultModelWarning" CornerRadius="4" Padding="10,7"
+                        Margin="0,0,0,8" Visibility="Collapsed"
+                        Background="#FF3D2000" BorderBrush="#FF8B4500" BorderThickness="1">
+                    <TextBlock Foreground="#FFFFA726" FontSize="12" TextWrapping="Wrap">
+                        ⚠  This default model is not installed in Ollama.
+                        Select an installed model below and click Set as Default.
+                    </TextBlock>
+                </Border>
+
+                <!-- Installed models list + Set as Default button -->
                 <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Model" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
-                    <ComboBox x:Name="OllamaModelBox"
-                              Background="#FF1A1A1A" Foreground="#FFE0E0E0"
-                              BorderBrush="#FF3A3A3A" FontSize="13"/>
+                    <TextBlock Text="Installed Models" Foreground="#FF888888"
+                               FontSize="12" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox x:Name="OllamaModelBox"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                  BorderBrush="#FF3A3A3A" FontSize="13"/>
+                        <Button x:Name="SetDefaultModelButton" Grid.Column="1"
+                                Content="Set as Default" Style="{DynamicResource GhostButton}"
+                                Margin="8,0,0,0" Click="SetDefaultModel_Click"/>
+                    </Grid>
                 </StackPanel>
 
                 <StackPanel Margin="0,0,0,24">
                     <TextBlock Text="Summary prompt template" Foreground="#FF888888"
                                FontSize="12" Margin="0,0,0,6"/>
                     <TextBox x:Name="SummaryPromptBox"
-                             Style="{StaticResource DarkTextBox}"
+                             Style="{DynamicResource DarkTextBox}"
                              AcceptsReturn="True" TextWrapping="Wrap"
                              Height="100" VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
 
-                <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,20"/>
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── RECORDING ──────────────────────────────── -->
                 <TextBlock Text="RECORDING" Foreground="#FF0078D4"
@@ -114,13 +152,13 @@
                     <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="Audio format" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="AudioFormatBox"
-                                  Background="#FF1A1A1A" Foreground="#FFE0E0E0"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
                         <TextBlock Text="MP3 bitrate" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="Mp3BitrateBox"
-                                  Background="#FF1A1A1A" Foreground="#FFE0E0E0"
+                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                 </Grid>
@@ -130,7 +168,7 @@
                     Delete audio file after transcription (saves disk space)
                 </CheckBox>
 
-                <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,20"/>
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── STORAGE ─────────────────────────────────── -->
                 <TextBlock Text="STORAGE" Foreground="#FF0078D4"
@@ -143,13 +181,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="RecordingsFolderBox" Style="{StaticResource DarkTextBox}"/>
-                        <Button Grid.Column="1" Content="Browse" Style="{StaticResource GhostButton}"
+                        <TextBox x:Name="RecordingsFolderBox" Style="{DynamicResource DarkTextBox}"/>
+                        <Button Grid.Column="1" Content="Browse" Style="{DynamicResource GhostButton}"
                                 Margin="8,0,0,0" Click="BrowseRecordingsFolder_Click"/>
                     </Grid>
                 </StackPanel>
 
-                <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,20"/>
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── GENERAL ─────────────────────────────────── -->
                 <TextBlock Text="GENERAL" Foreground="#FF0078D4"
@@ -158,7 +196,7 @@
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock Text="Theme" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
                     <ComboBox x:Name="ThemeBox" Width="180" HorizontalAlignment="Left"
-                              Background="#FF1A1A1A" Foreground="#FFE0E0E0"
+                              Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                               BorderBrush="#FF3A3A3A" FontSize="13"/>
                 </StackPanel>
 
@@ -175,7 +213,7 @@
                     Show recording timer in tray icon
                 </CheckBox>
 
-                <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,20"/>
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── APP WATCHER ────────────────────────────── -->
                 <TextBlock Text="APP WATCHER" Foreground="#FF0078D4"
@@ -194,7 +232,7 @@
                         <Run Text="zoom, ms-teams, discord, slack, webex" FontStyle="Italic"/>
                     </TextBlock>
                     <TextBox x:Name="WatchedAppsBox"
-                             Style="{StaticResource DarkTextBox}"
+                             Style="{DynamicResource DarkTextBox}"
                              AcceptsReturn="True" TextWrapping="Wrap"
                              Height="90" VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
@@ -203,13 +241,13 @@
         </ScrollViewer>
 
         <!-- Save Bar -->
-        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#FF2D2D2D" Padding="24,12">
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SeparatorBrush}" Padding="24,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock x:Name="SaveStatusText" Foreground="#FF4CAF50" FontSize="12"
                            VerticalAlignment="Center" Margin="0,0,16,0" Visibility="Collapsed"/>
-                <Button Content="Cancel" Style="{StaticResource GhostButton}"
+                <Button Content="Cancel" Style="{DynamicResource GhostButton}"
                         Margin="0,0,8,0" Click="CancelButton_Click"/>
-                <Button Content="Save Settings" Style="{StaticResource PrimaryButton}"
+                <Button Content="Save Settings" Style="{DynamicResource PrimaryButton}"
                         Click="SaveButton_Click"/>
             </StackPanel>
         </Border>

@@ -2,49 +2,49 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Colors -->
-    <Color x:Key="BackgroundColor">#FF202020</Color>
-    <Color x:Key="SidebarColor">#FF1E1E1E</Color>
-    <Color x:Key="SurfaceColor">#FF252525</Color>
-    <Color x:Key="BorderColor">#FF2D2D2D</Color>
+    <Color x:Key="BackgroundColor">#FFF3F3F3</Color>
+    <Color x:Key="SidebarColor">#FFEBEBEB</Color>
+    <Color x:Key="SurfaceColor">#FFF8F8F8</Color>
+    <Color x:Key="BorderColor">#FFCCCCCC</Color>
     <Color x:Key="AccentColor">#FF0078D4</Color>
     <Color x:Key="DangerColor">#FFC42B1C</Color>
-    <Color x:Key="SuccessColor">#FF4CAF50</Color>
-    <Color x:Key="TextPrimaryColor">#FFE0E0E0</Color>
-    <Color x:Key="TextSecondaryColor">#FF888888</Color>
-    <Color x:Key="TextMutedColor">#FF555555</Color>
+    <Color x:Key="SuccessColor">#FF2D8D2D</Color>
+    <Color x:Key="TextPrimaryColor">#FF1A1A1A</Color>
+    <Color x:Key="TextSecondaryColor">#FF555555</Color>
+    <Color x:Key="TextMutedColor">#FF888888</Color>
 
     <!-- Brushes -->
-    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
-    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}"/>
-    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
-    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
-    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
-    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
-    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+    <SolidColorBrush x:Key="BackgroundBrush"      Color="{StaticResource BackgroundColor}"/>
+    <SolidColorBrush x:Key="SidebarBrush"         Color="{StaticResource SidebarColor}"/>
+    <SolidColorBrush x:Key="SurfaceBrush"         Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="BorderBrush"          Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="AccentBrush"          Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="DangerBrush"          Color="{StaticResource DangerColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush"         Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush"     Color="{StaticResource TextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush"   Color="{StaticResource TextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextMutedBrush"       Color="{StaticResource TextMutedColor}"/>
 
     <!-- Structural brushes (used as DynamicResource in views) -->
-    <SolidColorBrush x:Key="AppBackgroundBrush"       Color="#FF202020"/>
-    <SolidColorBrush x:Key="SidebarBackgroundBrush"   Color="#FF1E1E1E"/>
-    <SolidColorBrush x:Key="PanelBackgroundBrush"     Color="#FF252525"/>
-    <SolidColorBrush x:Key="InputBackgroundBrush"     Color="#FF1A1A1A"/>
-    <SolidColorBrush x:Key="CardHoverBrush"           Color="#FF2E2E2E"/>
-    <SolidColorBrush x:Key="CardSelectedBrush"        Color="#FF1A2D42"/>
-    <SolidColorBrush x:Key="FolderSelectedBrush"      Color="#FF2D4A6E"/>
-    <SolidColorBrush x:Key="BadgeBackgroundBrush"     Color="#FF333333"/>
-    <SolidColorBrush x:Key="BadgeSelectedBrush"       Color="#FF1A3A5C"/>
-    <SolidColorBrush x:Key="SeparatorBrush"           Color="#FF2D2D2D"/>
-    <SolidColorBrush x:Key="ScrollThumbBrush"         Color="#FF3A3A3A"/>
-    <SolidColorBrush x:Key="HeaderTextBrush"          Color="White"/>
+    <SolidColorBrush x:Key="AppBackgroundBrush"       Color="#FFF3F3F3"/>
+    <SolidColorBrush x:Key="SidebarBackgroundBrush"   Color="#FFEBEBEB"/>
+    <SolidColorBrush x:Key="PanelBackgroundBrush"     Color="#FFF8F8F8"/>
+    <SolidColorBrush x:Key="InputBackgroundBrush"     Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="CardHoverBrush"           Color="#FFE4E4E4"/>
+    <SolidColorBrush x:Key="CardSelectedBrush"        Color="#FFD0E4F7"/>
+    <SolidColorBrush x:Key="FolderSelectedBrush"      Color="#FFBBE0F7"/>
+    <SolidColorBrush x:Key="BadgeBackgroundBrush"     Color="#FFDDDDDD"/>
+    <SolidColorBrush x:Key="BadgeSelectedBrush"       Color="#FFB8D4EE"/>
+    <SolidColorBrush x:Key="SeparatorBrush"           Color="#FFCCCCCC"/>
+    <SolidColorBrush x:Key="ScrollThumbBrush"         Color="#FFBBBBBB"/>
+    <SolidColorBrush x:Key="HeaderTextBrush"          Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="ActiveIndicatorBrush"     Color="#FF0078D4"/>
 
     <!-- RichTextBox for My Notes -->
     <Style x:Key="DarkRichTextBox" TargetType="RichTextBox">
         <Setter Property="Background"                    Value="Transparent"/>
         <Setter Property="BorderThickness"               Value="0"/>
-        <Setter Property="Foreground"                    Value="#FFE0E0E0"/>
+        <Setter Property="Foreground"                    Value="#FF1A1A1A"/>
         <Setter Property="FontSize"                      Value="14"/>
         <Setter Property="FontFamily"                    Value="Segoe UI"/>
         <Setter Property="Padding"                       Value="20,12"/>
@@ -70,7 +70,7 @@
         <Setter Property="IsReadOnlyCaretVisible"        Value="False"/>
         <Setter Property="Background"                    Value="Transparent"/>
         <Setter Property="BorderThickness"               Value="0"/>
-        <Setter Property="Foreground"                    Value="#FFBBBBBB"/>
+        <Setter Property="Foreground"                    Value="#FF444444"/>
         <Setter Property="FontSize"                      Value="13.5"/>
         <Setter Property="FontFamily"                    Value="Segoe UI"/>
         <Setter Property="TextWrapping"                  Value="Wrap"/>
@@ -155,7 +155,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource CardHoverBrush}"/>
+                            <Setter Property="Background" Value="#FFD8D8D8"/>
                             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -166,7 +166,7 @@
 
     <!-- TextBox Style -->
     <Style x:Key="DarkTextBox" TargetType="TextBox">
-        <Setter Property="Background" Value="#FF1A1A1A"/>
+        <Setter Property="Background" Value="#FFFFFFFF"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -195,12 +195,12 @@
 
     <!-- Small formatting-toolbar button (Bold / Italic / Underline / Bullets) -->
     <Style x:Key="FormatButton" TargetType="Button">
-        <Setter Property="Width"           Value="28"/>
-        <Setter Property="Height"          Value="24"/>
-        <Setter Property="Background"      Value="Transparent"/>
-        <Setter Property="Foreground"      Value="#FF888888"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Width"            Value="28"/>
+        <Setter Property="Height"           Value="24"/>
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Foreground"       Value="#FF555555"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="Cursor"           Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -211,8 +211,8 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bg" Property="Background" Value="#FF333333"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter TargetName="bg" Property="Background" Value="#FFD8D8D8"/>
+                            <Setter Property="Foreground" Value="#FF1A1A1A"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="bg" Property="Background" Value="#FF0078D4"/>
@@ -237,7 +237,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="{DynamicResource ScrollThumbBrush}" CornerRadius="3"/>
+                                            <Border Background="#FFBBBBBB" CornerRadius="3"/>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>

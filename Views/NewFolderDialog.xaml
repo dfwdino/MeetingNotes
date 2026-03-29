@@ -6,19 +6,16 @@
         Title="New Folder" Height="175" Width="380"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        Background="#FF252525">
-    <Window.Resources>
-        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
-    </Window.Resources>
+        Background="{DynamicResource PanelBackgroundBrush}">
     <StackPanel Margin="20">
         <TextBlock Text="Folder name" Foreground="#FF888888" FontSize="12" Margin="0,0,0,8"/>
-        <TextBox x:Name="FolderNameBox" Style="{StaticResource DarkTextBox}"
+        <TextBox x:Name="FolderNameBox" Style="{DynamicResource DarkTextBox}"
                  Margin="0,0,0,16"
                  KeyDown="FolderNameBox_KeyDown"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Cancel" Style="{StaticResource GhostButton}"
+            <Button Content="Cancel" Style="{DynamicResource GhostButton}"
                     Margin="0,0,8,0" Click="CancelButton_Click"/>
-            <Button Content="Create" Style="{StaticResource PrimaryButton}"
+            <Button Content="Create" Style="{DynamicResource PrimaryButton}"
                     Click="CreateButton_Click"/>
         </StackPanel>
     </StackPanel>

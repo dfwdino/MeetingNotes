@@ -316,7 +316,7 @@ public partial class MeetingDetailView : Page
         var responseText = string.Empty;
         var responseBubble = AddChatBubble("AI", "...", isUser: false);
 
-        _ollama.Configure(_settings.OllamaServerUrl, _settings.OllamaModel);
+        _ollama.Configure(_settings.OllamaServerUrl, _settings.OllamaDefaultModel);
 
         await foreach (var chunk in _ollama.ChatAsync(
             _meetingVm.Transcript ?? string.Empty, history, userMessage))

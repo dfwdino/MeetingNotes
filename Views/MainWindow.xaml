@@ -7,16 +7,8 @@
         ui:WindowHelper.UseModernWindowStyle="True"
         Title="Meeting Notes" Height="760" Width="1280" Icon="/MeetingNotes.ico"
         MinHeight="600" MinWidth="900"
-        Background="#FF202020"
+        Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterScreen">
-
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -28,13 +20,13 @@
         </Grid.ColumnDefinitions>
 
         <!-- Left Border Lines -->
-        <Rectangle Grid.Column="1" Fill="#FF2D2D2D"/>
-        <Rectangle Grid.Column="3" Fill="#FF2D2D2D"/>
+        <Rectangle Grid.Column="1" Fill="{DynamicResource SeparatorBrush}"/>
+        <Rectangle Grid.Column="3" Fill="{DynamicResource SeparatorBrush}"/>
 
         <!-- ══════════════════════════════════════ -->
         <!-- SIDEBAR                                -->
         <!-- ══════════════════════════════════════ -->
-        <Grid Grid.Column="0" Background="#FF1E1E1E">
+        <Grid Grid.Column="0" Background="{DynamicResource SidebarBackgroundBrush}">
             <!-- Full sidebar — visible when expanded -->
             <Grid x:Name="SidebarContent">
             <Grid.RowDefinitions>
@@ -50,18 +42,18 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="FOLDERS" Foreground="#FF888888" FontSize="11"
+                <TextBlock Text="FOLDERS" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
                            FontWeight="SemiBold" VerticalAlignment="Center"/>
                 <Button x:Name="CollapseSidebarButton" Grid.Column="1"
                         Content="◀" ToolTip="Hide folders"
-                        Style="{StaticResource GhostButton}"
-                        Padding="6,3" FontSize="13" Foreground="#FF888888"
+                        Style="{DynamicResource GhostButton}"
+                        Padding="6,3" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
                         Click="CollapseSidebarButton_Click"/>
             </Grid>
 
             <!-- New Folder Button -->
             <Button Grid.Row="1" Content="＋  New Folder"
-                    Style="{StaticResource PrimaryButton}"
+                    Style="{DynamicResource PrimaryButton}"
                     Margin="10,0,10,12"
                     Click="NewFolderButton_Click"/>
 
@@ -79,7 +71,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="📁" FontSize="15" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="All Meetings"
-                                       Foreground="#FFCCCCCC" FontSize="13.5"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13.5"
                                        Margin="10,0,0,0" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -95,7 +87,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="🗑" FontSize="15" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="Trash"
-                                       Foreground="#FF888888" FontSize="13.5"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13.5"
                                        Margin="10,0,0,0" VerticalAlignment="Center"/>
                             <!-- Trash count badge -->
                             <Border x:Name="TrashCountBadge" Grid.Column="2"
@@ -107,7 +99,7 @@
                         </Grid>
                     </Border>
 
-                    <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,4"/>
+                    <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,4"/>
 
                     <!-- Dynamic Folders -->
                     <ItemsControl x:Name="FolderList">
@@ -122,10 +114,10 @@
                                             <Setter Property="Background" Value="Transparent"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Background" Value="#FF2D4A6E"/>
+                                                    <Setter Property="Background" Value="{DynamicResource FolderSelectedBrush}"/>
                                                 </DataTrigger>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#FF2A2A2A"/>
+                                                    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -180,7 +172,7 @@
                                         <TextBox Grid.Column="1"
                                                  Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  FontSize="13.5" FontFamily="Segoe UI"
-                                                 Foreground="#FFE0E0E0" Background="#FF1A1A1A"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}" Background="{DynamicResource InputBackgroundBrush}"
                                                  BorderBrush="#FF0078D4" BorderThickness="1"
                                                  Padding="3,1" Margin="8,0,4,0"
                                                  VerticalAlignment="Center"
@@ -204,10 +196,10 @@
                                         <Border Grid.Column="2" CornerRadius="10" Padding="6,1">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#FF333333"/>
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeBackgroundBrush}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Background" Value="#FF1A3A5C"/>
+                                                            <Setter Property="Background" Value="{DynamicResource BadgeSelectedBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -290,11 +282,11 @@
             </ScrollViewer>
 
             <!-- Footer -->
-            <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="#FF2D2D2D" Padding="16,12">
+            <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SeparatorBrush}" Padding="16,12">
                 <Grid>
-                    <Button Content="⚙  Settings" Style="{StaticResource GhostButton}"
+                    <Button Content="⚙  Settings" Style="{DynamicResource GhostButton}"
                             HorizontalAlignment="Left" Click="SettingsButton_Click"/>
-                    <Button Content="ℹ" Style="{StaticResource GhostButton}"
+                    <Button Content="ℹ" Style="{DynamicResource GhostButton}"
                             HorizontalAlignment="Right" Width="32" Padding="0"
                             FontSize="15" ToolTip="About"
                             Click="AboutButton_Click"/>
@@ -303,7 +295,7 @@
             </Grid><!-- /SidebarContent -->
 
             <!-- Collapsed strip — 32 px wide, shown instead of full sidebar -->
-            <Border x:Name="SidebarCollapsedStrip" Visibility="Collapsed" Background="#FF1E1E1E">
+            <Border x:Name="SidebarCollapsedStrip" Visibility="Collapsed" Background="{DynamicResource SidebarBackgroundBrush}">
                 <Button VerticalAlignment="Top" HorizontalAlignment="Stretch"
                         Height="36" Margin="2,8,2,0"
                         ToolTip="Show Folders"
@@ -329,7 +321,7 @@
         <!-- ══════════════════════════════════════ -->
         <!-- MEETING LIST                           -->
         <!-- ══════════════════════════════════════ -->
-        <Grid x:Name="MeetingListPanel" Grid.Column="2" Background="#FF252525">
+        <Grid x:Name="MeetingListPanel" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -345,31 +337,31 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="FolderTitleText" Text="All Meetings"
-                           Foreground="White" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource HeaderTextBrush}" FontSize="16" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
                 <Button x:Name="NewMeetingButton" Grid.Column="1" Content="＋  New"
-                        Style="{StaticResource PrimaryButton}"
+                        Style="{DynamicResource PrimaryButton}"
                         Padding="10,5" FontSize="12" Margin="0,0,6,0"
                         Visibility="Collapsed"
                         Click="NewMeetingButton_Click"/>
                 <!-- Search toggle button -->
                 <Button x:Name="SearchToggleButton" Grid.Column="2"
                         Content="🔍" ToolTip="Search meetings"
-                        Style="{StaticResource GhostButton}"
+                        Style="{DynamicResource GhostButton}"
                         Padding="6,5" FontSize="13" Margin="0,0,2,0"
                         Click="SearchToggle_Click"/>
                 <!-- Collapse panel button -->
                 <Button x:Name="CollapseListButton" Grid.Column="3"
                         Content="◀" ToolTip="Hide meeting list"
-                        Style="{StaticResource GhostButton}"
-                        Padding="6,5" FontSize="13" Foreground="#FF888888"
+                        Style="{DynamicResource GhostButton}"
+                        Padding="6,5" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
                         Click="CollapseListButton_Click"/>
             </Grid>
 
             <!-- Search — hidden by default, toggled by 🔍 button -->
             <Border x:Name="SearchRow" Grid.Row="1" Margin="12,0,12,10"
                     Visibility="Collapsed">
-                <TextBox x:Name="SearchBox" Style="{StaticResource DarkTextBox}"
+                <TextBox x:Name="SearchBox" Style="{DynamicResource DarkTextBox}"
                          ui:ControlHelper.PlaceholderText="Search meetings..."
                          TextChanged="SearchBox_TextChanged"/>
             </Border>
@@ -380,7 +372,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:MeetingViewModel}">
                             <Border x:Name="MeetingCardBorder"
-                                    BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D"
+                                    BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SeparatorBrush}"
                                     Cursor="Hand" Padding="16,12"
                                     MouseLeftButtonDown="MeetingItem_Click"
                                     Tag="{Binding}">
@@ -389,10 +381,10 @@
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter Property="Background" Value="#FF1A2D42"/>
+                                                <Setter Property="Background" Value="{DynamicResource CardSelectedBrush}"/>
                                             </DataTrigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#FF2E2E2E"/>
+                                                <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -404,7 +396,7 @@
                                     </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="{Binding Title}" FontSize="13.5"
-                                               FontWeight="Medium" Foreground="#FFE0E0E0"
+                                               FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
                                                Margin="0,0,0,4" TextTrimming="CharacterEllipsis"/>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock FontSize="11.5" Foreground="#FF666666">
@@ -427,7 +419,7 @@
                                                             <Setter Property="Background" Value="#FF3D1A1A"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Status}" Value="New">
-                                                            <Setter Property="Background" Value="#FF2A2A2A"/>
+                                                            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -549,7 +541,7 @@
         <!-- ══════════════════════════════════════ -->
         <!-- DETAIL / CONTENT AREA                  -->
         <!-- ══════════════════════════════════════ -->
-        <Grid Grid.Column="4" Background="#FF202020">
+        <Grid Grid.Column="4" Background="{DynamicResource AppBackgroundBrush}">
             <!-- Content Frame - swapped by code-behind -->
             <Frame x:Name="ContentFrame" NavigationUIVisibility="Hidden"
                    Background="Transparent"/>
@@ -560,7 +552,7 @@
                 <TextBlock Text="🎙️" FontSize="48" HorizontalAlignment="Center"
                            Margin="0,0,0,16"/>
                 <TextBlock Text="Select a meeting or create a new one"
-                           Foreground="#FF555555" FontSize="14"
+                           Foreground="{DynamicResource TextMutedBrush}" FontSize="14"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
@@ -585,7 +577,7 @@
                                     VerticalAlignment="Center">
                             <TextBlock Text="▶" Foreground="#FF5B9BD5" FontSize="12"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Meetings" Foreground="#FFCCCCCC"
+                            <TextBlock Text="Meetings" Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>

@@ -19,7 +19,7 @@ public partial class SettingsViewModel : BaseViewModel
 
     // Ollama
     [ObservableProperty] private string _ollamaServerUrl = "http://localhost:11434";
-    [ObservableProperty] private string _ollamaModel = "llama3.2:3b";
+    [ObservableProperty] private string _ollamaDefaultModel = "llama3.2:3b";
     [ObservableProperty] private string _summaryPrompt = string.Empty;
     [ObservableProperty] private ObservableCollection<string> _availableModels = [];
     [ObservableProperty] private string _ollamaStatus = "Not checked";
@@ -63,7 +63,7 @@ public partial class SettingsViewModel : BaseViewModel
         WhisperCacheFolder = s.WhisperCacheFolder;
         TranscriptionChunkSeconds = s.TranscriptionChunkSeconds;
         OllamaServerUrl = s.OllamaServerUrl;
-        OllamaModel = s.OllamaModel;
+        OllamaDefaultModel = s.OllamaDefaultModel;
         SummaryPrompt = s.SummaryPrompt;
         AudioFormat = s.AudioFormat;
         Mp3Bitrate = s.Mp3Bitrate;
@@ -83,7 +83,7 @@ public partial class SettingsViewModel : BaseViewModel
     {
         OllamaStatus = "Connecting...";
         OllamaConnected = false;
-        _ollama.Configure(OllamaServerUrl, OllamaModel);
+        _ollama.Configure(OllamaServerUrl, OllamaDefaultModel);
         var models = await _ollama.GetAvailableModelsAsync();
 
         if (models.Count > 0)
@@ -91,8 +91,6 @@ public partial class SettingsViewModel : BaseViewModel
             AvailableModels = new ObservableCollection<string>(models);
             OllamaStatus = $"Connected — {models.Count} model(s) found";
             OllamaConnected = true;
-            if (!models.Contains(OllamaModel) && models.Count > 0)
-                OllamaModel = models[0];
         }
         else
         {
@@ -131,7 +129,7 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.WhisperCacheFolder = WhisperCacheFolder;
         _settings.TranscriptionChunkSeconds = TranscriptionChunkSeconds;
         _settings.OllamaServerUrl = OllamaServerUrl;
-        _settings.OllamaModel = OllamaModel;
+        _settings.OllamaDefaultModel = OllamaDefaultModel;
         _settings.SummaryPrompt = SummaryPrompt;
         _settings.AudioFormat = AudioFormat;
         _settings.Mp3Bitrate = Mp3Bitrate;

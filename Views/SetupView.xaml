@@ -7,10 +7,7 @@
         Height="460" Width="520"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
-        Background="#FF202020">
-    <Window.Resources>
-        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
-    </Window.Resources>
+        Background="{DynamicResource AppBackgroundBrush}">
 
     <StackPanel Margin="48,40">
         <TextBlock Text="🎙️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16"/>
@@ -23,7 +20,7 @@
                    Margin="0,0,0,40"/>
 
         <!-- Model info -->
-        <Border Background="#FF252525" CornerRadius="8" Padding="20,16" Margin="0,0,0,24">
+        <Border Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="8" Padding="20,16" Margin="0,0,0,24">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -49,7 +46,7 @@
                            Foreground="#FF888888" FontSize="12"
                            HorizontalAlignment="Right"/>
             </Grid>
-            <Border Background="#FF1A1A1A" CornerRadius="4" Height="6">
+            <Border Background="{DynamicResource InputBackgroundBrush}" CornerRadius="4" Height="6">
                 <Border x:Name="ProgressBar" Background="#FF0078D4"
                         CornerRadius="4" HorizontalAlignment="Left" Width="0"/>
             </Border>
@@ -57,7 +54,7 @@
 
         <!-- Buttons -->
         <Button x:Name="DownloadButton" Content="Download &amp; Get Started"
-                Style="{StaticResource PrimaryButton}"
+                Style="{DynamicResource PrimaryButton}"
                 Padding="0,12" FontSize="14"
                 Click="DownloadButton_Click"/>
 

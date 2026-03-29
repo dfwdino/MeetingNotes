@@ -1,6 +1,9 @@
 using MeetingNotes.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using WpfColor = System.Windows.Media.Color;
+using WpfMsgBox = System.Windows.MessageBox;
 
 namespace MeetingNotes.Views;
 
@@ -28,8 +31,9 @@ public partial class SettingsView : Page
 
         OllamaUrlBox.Text = _vm.OllamaServerUrl;
         OllamaModelBox.ItemsSource = _vm.AvailableModels.Count > 0
-            ? _vm.AvailableModels : new[] { _vm.OllamaModel };
-        OllamaModelBox.SelectedItem = _vm.OllamaModel;
+            ? _vm.AvailableModels : new[] { _vm.OllamaDefaultModel };
+        OllamaModelBox.SelectedItem = _vm.OllamaDefaultModel;
+        UpdateDefaultModelDisplay();
 
         SummaryPromptBox.Text = _vm.SummaryPrompt;
         WhisperFolderBox.Text = _vm.WhisperCacheFolder;
@@ -57,25 +61,94 @@ public partial class SettingsView : Page
         WatchedAppsBox.Text = _vm.WatchedApps.Replace(",", "\n");
     }
 
+    private async void Page_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Silently try to discover models on open — no error shown if Ollama isn't running
+        await FetchOllamaModelsAsync(showStatus: false);
+    }
+
     private async void TestOllama_Click(object sender, RoutedEventArgs e)
     {
+        await FetchOllamaModelsAsync(showStatus: true);
+    }
+
+    private async Task FetchOllamaModelsAsync(bool showStatus)
+    {
         _vm.OllamaServerUrl = OllamaUrlBox.Text;
-        OllamaStatusText.Text = "Connecting...";
-        OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-            System.Windows.Media.Color.FromRgb(136, 136, 136));
+
+        if (showStatus)
+        {
+            OllamaStatusText.Text = "Connecting...";
+            OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(136, 136, 136));
+        }
 
         await _vm.TestOllamaConnectionAsync();
 
-        OllamaStatusText.Text = _vm.OllamaStatus;
-        OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-            _vm.OllamaConnected
-                ? System.Windows.Media.Color.FromRgb(76, 175, 80)
-                : System.Windows.Media.Color.FromRgb(196, 43, 28));
+        if (showStatus)
+        {
+            OllamaStatusText.Text = _vm.OllamaStatus;
+            OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                _vm.OllamaConnected
+                    ? System.Windows.Media.Color.FromRgb(76, 175, 80)
+                    : System.Windows.Media.Color.FromRgb(196, 43, 28));
+        }
 
         if (_vm.OllamaConnected)
         {
             OllamaModelBox.ItemsSource = _vm.AvailableModels;
-            OllamaModelBox.SelectedItem = _vm.OllamaModel;
+            OllamaModelBox.SelectedItem = _vm.OllamaDefaultModel;
+        }
+        UpdateDefaultModelDisplay();
+    }
+
+    private void SetDefaultModel_Click(object sender, RoutedEventArgs e)
+    {
+        if (OllamaModelBox.SelectedItem is not string selected)
+        {
+            WpfMsgBox.Show("Please select a model from the Installed Models list first.",
+                "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Validate: model must be in the known installed list
+        if (_vm.AvailableModels.Count > 0 && !_vm.AvailableModels.Contains(selected))
+        {
+            WpfMsgBox.Show($"\"{selected}\" is not in your installed Ollama models.\n\n" +
+                "Click Test Connection to refresh the model list, then select a valid model.",
+                "Model Not Installed", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        _vm.OllamaDefaultModel = selected;
+        UpdateDefaultModelDisplay();
+    }
+
+    private void UpdateDefaultModelDisplay()
+    {
+        DefaultModelLabel.Text = _vm.OllamaDefaultModel;
+
+        bool modelsKnown = _vm.AvailableModels.Count > 0;
+        bool isInstalled = _vm.AvailableModels.Contains(_vm.OllamaDefaultModel);
+
+        if (!modelsKnown)
+        {
+            // Haven't connected yet — show neutral state
+            DefaultModelStatus.Text = "(connect to verify)";
+            DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(136, 136, 136));
+            DefaultModelWarning.Visibility = Visibility.Collapsed;
+        }
+        else if (isInstalled)
+        {
+            DefaultModelStatus.Text = "✓ Installed";
+            DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            DefaultModelWarning.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            DefaultModelStatus.Text = "⚠ Not found";
+            DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(239, 83, 80));
+            DefaultModelWarning.Visibility = Visibility.Visible;
         }
     }
 
@@ -96,9 +169,10 @@ public partial class SettingsView : Page
         // Reload original values — discard any unsaved edits
         LoadControls();
 
-        // Navigate back to the previous content (meeting detail / empty state)
         if (NavigationService?.CanGoBack == true)
             NavigationService.GoBack();
+        else if (System.Windows.Window.GetWindow(this) is MainWindow mw)
+            mw.GoBackFromSettings();
     }
 
     private async void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -110,7 +184,7 @@ public partial class SettingsView : Page
             0 => 30, 2 => 120, _ => 60
         };
         _vm.OllamaServerUrl = OllamaUrlBox.Text;
-        _vm.OllamaModel = OllamaModelBox.SelectedItem?.ToString() ?? _vm.OllamaModel;
+        // OllamaDefaultModel is set explicitly via Set as Default — don't override on save
         _vm.SummaryPrompt = SummaryPromptBox.Text;
         _vm.AudioFormat = AudioFormatBox.SelectedItem?.ToString() ?? "MP3";
         _vm.Mp3Bitrate = Mp3BitrateBox.SelectedIndex switch
@@ -129,6 +203,7 @@ public partial class SettingsView : Page
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         await _vm.SaveAsync();
+        App.ApplyTheme(_vm.Theme);
 
         SaveStatusText.Text = "✓  Settings saved";
         SaveStatusText.Visibility = Visibility.Visible;

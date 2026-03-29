@@ -13,7 +13,7 @@ public class AppSettings
 
     // Ollama
     public string OllamaServerUrl { get; set; } = "http://localhost:11434";
-    public string OllamaModel { get; set; } = "llama3.2:3b";
+    public string OllamaDefaultModel { get; set; } = "llama3.2:3b";
     public string SummaryPrompt { get; set; } =
         "You are a meeting assistant. Based on the following transcript, provide:\n" +
         "1. A brief overview (2-3 sentences)\n" +

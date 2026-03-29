@@ -8,9 +8,6 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize">
-    <Window.Resources>
-        <ResourceDictionary Source="/Themes/DarkTheme.xaml"/>
-    </Window.Resources>
 
     <!-- Outer border provides rounded corners + drop-shadow -->
     <Border x:Name="ToastCard" CornerRadius="10" Background="#FF272727"
@@ -64,10 +61,10 @@
 
                 <!-- Action buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Record" Style="{StaticResource PrimaryButton}"
+                    <Button Content="Record" Style="{DynamicResource PrimaryButton}"
                             Padding="12,5" FontSize="12"
                             Click="StartButton_Click" Margin="0,0,5,0"/>
-                    <Button Content="✕" Style="{StaticResource GhostButton}"
+                    <Button Content="✕" Style="{DynamicResource GhostButton}"
                             Width="26" Padding="0" FontSize="11"
                             Click="DismissButton_Click"/>
                 </StackPanel>
