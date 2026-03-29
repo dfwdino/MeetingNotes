@@ -98,7 +98,29 @@ public partial class SettingsView : Page
         {
             OllamaModelBox.ItemsSource = _vm.AvailableModels;
             OllamaModelBox.SelectedItem = _vm.OllamaDefaultModel;
+            InstalledModelsPanel.Visibility = Visibility.Visible;
+            ManualModelPanel.Visibility = Visibility.Collapsed;
         }
+        else
+        {
+            InstalledModelsPanel.Visibility = Visibility.Collapsed;
+            ManualModelPanel.Visibility = Visibility.Visible;
+            ManualModelBox.Text = _vm.OllamaDefaultModel;
+        }
+        UpdateDefaultModelDisplay();
+    }
+
+    private void SetDefaultModelManual_Click(object sender, RoutedEventArgs e)
+    {
+        var name = ManualModelBox.Text.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            WpfMsgBox.Show("Please enter a model name (e.g. llama3.2:3b).",
+                "No Model Entered", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _vm.OllamaDefaultModel = name;
         UpdateDefaultModelDisplay();
     }
 

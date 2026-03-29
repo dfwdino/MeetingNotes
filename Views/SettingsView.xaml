@@ -112,8 +112,8 @@
                 </Border>
 
                 <!-- Installed models list + Set as Default button -->
-                <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Installed Models" Foreground="#FF888888"
+                <StackPanel x:Name="InstalledModelsPanel" Margin="0,0,0,12">
+                    <TextBlock Text="Installed Models" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -126,6 +126,24 @@
                         <Button x:Name="SetDefaultModelButton" Grid.Column="1"
                                 Content="Set as Default" Style="{DynamicResource GhostButton}"
                                 Margin="8,0,0,0" Click="SetDefaultModel_Click"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Manual entry — shown when server can't be reached -->
+                <StackPanel x:Name="ManualModelPanel" Margin="0,0,0,12" Visibility="Collapsed">
+                    <TextBlock Text="Server unreachable — enter model name manually"
+                               Foreground="#FFFFA726" FontSize="12" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ManualModelBox"
+                                 Style="{DynamicResource DarkTextBox}"
+                                 ui:ControlHelper.PlaceholderText="e.g. llama3.2:3b"/>
+                        <Button Grid.Column="1" Content="Set as Default"
+                                Style="{DynamicResource GhostButton}"
+                                Margin="8,0,0,0" Click="SetDefaultModelManual_Click"/>
                     </Grid>
                 </StackPanel>
 
