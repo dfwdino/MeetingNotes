@@ -35,6 +35,8 @@
     <SolidColorBrush x:Key="FolderSelectedBrush"      Color="#FF2D4A6E"/>
     <SolidColorBrush x:Key="BadgeBackgroundBrush"     Color="#FF333333"/>
     <SolidColorBrush x:Key="BadgeSelectedBrush"       Color="#FF1A3A5C"/>
+    <SolidColorBrush x:Key="BadgeTextBrush"           Color="#FFAAAAAA"/>
+    <SolidColorBrush x:Key="BadgeSelectedTextBrush"   Color="#FF7AB3E0"/>
     <SolidColorBrush x:Key="SeparatorBrush"           Color="#FF2D2D2D"/>
     <SolidColorBrush x:Key="ScrollThumbBrush"         Color="#FF3A3A3A"/>
     <SolidColorBrush x:Key="HeaderTextBrush"          Color="White"/>

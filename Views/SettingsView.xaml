@@ -14,7 +14,7 @@
 
         <!-- Header -->
         <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SeparatorBrush}" Padding="24,16">
-            <TextBlock Text="Settings" Foreground="White" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="Settings" Foreground="{DynamicResource HeaderTextBrush}" FontSize="20" FontWeight="SemiBold"/>
         </Border>
 
         <!-- Settings Content -->
@@ -31,13 +31,14 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,8,0">
-                        <TextBlock Text="Model" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Text="Model" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="WhisperModelBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <TextBlock Text="Live Transcription Chunk" Foreground="#FF888888"
+                    <!-- Live Transcription Chunk — hidden until feature is wired up -->
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0" Visibility="Collapsed">
+                        <TextBlock Text="Live Transcription Chunk" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="ChunkIntervalBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
@@ -46,7 +47,7 @@
                 </Grid>
 
                 <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="Model cache folder" Foreground="#FF888888"
+                    <TextBlock Text="Model cache folder" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -71,7 +72,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="Server URL" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <TextBox x:Name="OllamaUrlBox" Style="{DynamicResource DarkTextBox}"/>
                     </StackPanel>
                     <Button Grid.Column="1" Content="Test Connection"
@@ -79,7 +80,7 @@
                             Margin="8,18,0,0" Click="TestOllama_Click"/>
                 </Grid>
 
-                <TextBlock x:Name="OllamaStatusText" Foreground="#FF888888"
+                <TextBlock x:Name="OllamaStatusText" Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="12" Margin="0,0,0,12"/>
 
                 <!-- Default model display + validation -->
@@ -91,7 +92,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Default Model:" Foreground="#FF888888" FontSize="12"
+                        <TextBlock Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock x:Name="DefaultModelLabel" Grid.Column="1"
                                    FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
@@ -148,7 +149,7 @@
                 </StackPanel>
 
                 <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="Summary prompt template" Foreground="#FF888888"
+                    <TextBlock Text="Summary prompt template" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <TextBox x:Name="SummaryPromptBox"
                              Style="{DynamicResource DarkTextBox}"
@@ -168,13 +169,13 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,8,0">
-                        <TextBlock Text="Audio format" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Text="Audio format" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="AudioFormatBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <TextBlock Text="MP3 bitrate" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Text="MP3 bitrate" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="Mp3BitrateBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
@@ -182,7 +183,7 @@
                 </Grid>
 
                 <CheckBox x:Name="DeleteAudioBox" Margin="0,0,0,24"
-                          Foreground="#FFCCCCCC" FontSize="13">
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Delete audio file after transcription (saves disk space)
                 </CheckBox>
 
@@ -193,7 +194,7 @@
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Recordings folder" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock Text="Recordings folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -212,22 +213,22 @@
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Theme" Foreground="#FF888888" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <ComboBox x:Name="ThemeBox" Width="180" HorizontalAlignment="Left"
                               Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                               BorderBrush="#FF3A3A3A" FontSize="13"/>
                 </StackPanel>
 
                 <CheckBox x:Name="StartupBox" Margin="0,0,0,10"
-                          Foreground="#FFCCCCCC" FontSize="13">
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Launch at Windows startup
                 </CheckBox>
                 <CheckBox x:Name="MinimizeTrayBox" Margin="0,0,0,10"
-                          Foreground="#FFCCCCCC" FontSize="13">
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Minimize to tray when closed
                 </CheckBox>
                 <CheckBox x:Name="TrayTimerBox" Margin="0,0,0,24"
-                          Foreground="#FFCCCCCC" FontSize="13">
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Show recording timer in tray icon
                 </CheckBox>
 
@@ -238,14 +239,14 @@
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <CheckBox x:Name="AppWatcherEnabledBox" Margin="0,0,0,14"
-                          Foreground="#FFCCCCCC" FontSize="13">
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Prompt to record when a watched app becomes active
                 </CheckBox>
 
                 <StackPanel Margin="0,0,0,4">
                     <TextBlock Text="Apps to watch  (one per line — partial process name is fine)"
-                               Foreground="#FF888888" FontSize="12" Margin="0,0,0,5"/>
-                    <TextBlock Foreground="#FF555555" FontSize="11" Margin="0,0,0,8">
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,5"/>
+                    <TextBlock Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,0,0,8">
                         <Run Text="Common: "/>
                         <Run Text="zoom, ms-teams, discord, slack, webex" FontStyle="Italic"/>
                     </TextBlock>

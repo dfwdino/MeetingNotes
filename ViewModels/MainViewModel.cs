@@ -103,6 +103,7 @@ public partial class MainViewModel : BaseViewModel
         var vm = new MeetingViewModel(meeting);
         Meetings.Insert(0, vm);
         SelectMeeting(vm);
+        SelectedFolder.MeetingCount++;
     }
 
     public void SelectMeeting(MeetingViewModel meeting)
@@ -133,6 +134,10 @@ public partial class MainViewModel : BaseViewModel
         Meetings.Remove(meeting);
         if (SelectedMeeting?.Id == meeting.Id)
             SelectedMeeting = null;
+        // Keep the folder badge count in sync
+        var folder = Folders.FirstOrDefault(f => f.Id == meeting.FolderId);
+        if (folder is not null)
+            folder.MeetingCount = Math.Max(0, folder.MeetingCount - 1);
     }
 
     public async Task LoadTrashAsync()

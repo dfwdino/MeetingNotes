@@ -44,7 +44,10 @@ public class DatabaseService
 
     // ── Folders ──────────────────────────────────────────────────────────
     public async Task<List<MeetingFolder>> GetFoldersAsync() =>
-        await _db.Folders.OrderBy(f => f.Name).ToListAsync();
+        await _db.Folders
+            .OrderBy(f => f.Name)
+            .Include(f => f.Meetings.Where(m => !m.IsDeleted))
+            .ToListAsync();
 
     public async Task<MeetingFolder> CreateFolderAsync(string name)
     {

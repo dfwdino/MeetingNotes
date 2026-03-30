@@ -62,6 +62,7 @@
                 <StackPanel>
                     <!-- All Meetings -->
                     <Border x:Name="AllMeetingsBorder" Cursor="Hand"
+                            Margin="0,0,0,5"
                             MouseLeftButtonDown="AllMeetings_Click">
                         <Grid Margin="16,9">
                             <Grid.ColumnDefinitions>
@@ -78,6 +79,7 @@
 
                     <!-- Trash -->
                     <Border x:Name="TrashBorder" Cursor="Hand"
+                            Margin="0,0,0,5"
                             MouseLeftButtonDown="Trash_Click">
                         <Grid Margin="16,9">
                             <Grid.ColumnDefinitions>
@@ -107,6 +109,7 @@
                             <DataTemplate DataType="{x:Type vm:FolderViewModel}">
                                 <Border x:Name="FolderCardBorder"
                                         Cursor="Hand"
+                                        Margin="0,0,0,5"
                                         MouseLeftButtonDown="FolderItem_Click"
                                         Tag="{Binding}">
                                     <Border.Style>
@@ -154,11 +157,11 @@
                                                    VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#FFCCCCCC"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding IsEditing}" Value="True">
                                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -207,10 +210,10 @@
                                             <TextBlock Text="{Binding MeetingCount}" FontSize="11">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#FFAAAAAA"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource BadgeTextBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter Property="Foreground" Value="#FF7AB3E0"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource BadgeSelectedTextBrush}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>

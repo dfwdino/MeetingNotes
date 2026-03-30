@@ -21,7 +21,7 @@ public partial class MeetingDetailView : Page
     private readonly OllamaService _ollama;
     private readonly AppSettings _settings;
     private MeetingViewModel? _meetingVm;
-    private string _activeTab = "MyNotes";
+    //private string _ActiveTab = "MyNotes";
     private bool _notesChanged;
     private bool _suppressNoteChange;
     private System.Windows.Threading.DispatcherTimer? _saveTimer;
@@ -41,8 +41,8 @@ public partial class MeetingDetailView : Page
         TitleBox.Text = vm.Title;
         MetaText.Text = $"{vm.DateDisplay}  ·  {vm.DurationDisplay}";
         LoadRichText(vm.MyNotes);
-        TranscriptText.Text = vm.Transcript ?? string.Empty;
-        SummaryText.Text = vm.Summary ?? string.Empty;
+        TranscriptText.Text = AddLineSpacing(vm.Transcript);
+        SummaryText.Text    = AddLineSpacing(vm.Summary);
 
         // Load chat history
         await LoadChatHistoryAsync(vm.Id);
@@ -79,7 +79,7 @@ public partial class MeetingDetailView : Page
 
     private void SwitchTab(string tab)
     {
-        _activeTab = tab;
+        //_ActiveTab = tab;
 
         MyNotesPanel.Visibility   = tab == "MyNotes"    ? Visibility.Visible : Visibility.Collapsed;
         TranscriptPanel.Visibility = tab == "Transcript" ? Visibility.Visible : Visibility.Collapsed;
@@ -332,6 +332,17 @@ public partial class MeetingDetailView : Page
         await _db.AddChatMessageAsync(_meetingVm.Id, ChatRole.Assistant, responseText);
         ChatInputBox.IsEnabled = true;
         ChatInputBox.Focus();
+    }
+
+    /// <summary>
+    /// Inserts a blank line between each non-empty line so the read-only TextBox
+    /// displays ~5 px of breathing room between transcript / summary segments.
+    /// </summary>
+    private static string AddLineSpacing(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("\n\n", lines);
     }
 
     private UIElement AddChatBubble(string sender, string message, bool isUser)
