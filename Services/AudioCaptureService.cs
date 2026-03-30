@@ -32,10 +32,24 @@ public class AudioCaptureService : IDisposable
 
     private bool _isRecording;
 
+    // Per-session mute flags — write silence instead of real audio so files stay time-aligned
+    private volatile bool _micMuted;
+    private volatile bool _loopbackMuted;
+
+    // Lock that guards writer swaps during live chunk splitting.
+    // Audio callbacks hold this lock only while writing (microseconds);
+    // SplitChunkAsync holds it only while swapping references (nanoseconds).
+    private readonly object _writerLock = new();
+
     public bool    IsRecording    => _isRecording;
+    public bool    IsMicMuted     => _micMuted;
+    public bool    IsLoopbackMuted => _loopbackMuted;
     public string? CurrentFilePath => _finalOutputPath;
 
     public event EventHandler<float>? AudioLevelChanged;
+
+    public void SetMicMuted(bool muted)      => _micMuted      = muted;
+    public void SetLoopbackMuted(bool muted) => _loopbackMuted = muted;
 
     // ──────────────────────────────────────────────────────────────
     //  START
@@ -56,6 +70,8 @@ public class AudioCaptureService : IDisposable
         _systemCapture = new WasapiLoopbackCapture();
         _wavWriter     = new WaveFileWriter(_tempWavPath, _systemCapture.WaveFormat);
 
+        _micMuted      = false;
+        _loopbackMuted = false;
         _loopbackPadded    = false;
         _captureStartTime  = DateTime.UtcNow;
 
@@ -145,34 +161,125 @@ public class AudioCaptureService : IDisposable
     private void OnSystemAudioAvailable(object? sender, WaveInEventArgs e)
     {
         if (e.BytesRecorded == 0) return;
-
-        // One-shot: on the very first loopback packet, pad the file with silence
-        // covering the gap between StartRecording() and now.  This aligns the
-        // loopback WAV with the mic WAV (which starts writing immediately).
-        // Done once only — never touches the file again, so no mid-stream echo.
-        if (!_loopbackPadded)
+        lock (_writerLock)
         {
-            _loopbackPadded = true;
-            var delay = DateTime.UtcNow - _captureStartTime;
-            if (delay.TotalMilliseconds > 80 && _wavWriter is not null)
+            if (!_loopbackPadded)
             {
-                var wf    = _wavWriter.WaveFormat;
-                var bytes = (int)(wf.AverageBytesPerSecond * delay.TotalSeconds);
-                bytes     = (bytes / wf.BlockAlign) * wf.BlockAlign;
-                if (bytes > 0)
-                    _wavWriter.Write(new byte[bytes], 0, bytes);
+                _loopbackPadded = true;
+                var delay = DateTime.UtcNow - _captureStartTime;
+                if (delay.TotalMilliseconds > 80 && _wavWriter is not null)
+                {
+                    var wf    = _wavWriter.WaveFormat;
+                    var bytes = (int)(wf.AverageBytesPerSecond * delay.TotalSeconds);
+                    bytes     = (bytes / wf.BlockAlign) * wf.BlockAlign;
+                    if (bytes > 0)
+                        _wavWriter.Write(new byte[bytes], 0, bytes);
+                }
+            }
+
+            if (_loopbackMuted)
+                _wavWriter?.Write(new byte[e.BytesRecorded], 0, e.BytesRecorded);
+            else
+            {
+                _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+                UpdatePeakLevel(CalculateLevelFloat(e.Buffer, e.BytesRecorded));
             }
         }
-
-        _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
-        UpdatePeakLevel(CalculateLevelFloat(e.Buffer, e.BytesRecorded));
     }
 
     private void OnMicAudioAvailable(object? sender, WaveInEventArgs e)
     {
         if (e.BytesRecorded == 0) return;
-        _micWavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
-        UpdatePeakLevel(CalculateLevelPcm16(e.Buffer, e.BytesRecorded));
+        lock (_writerLock)
+        {
+            if (_micMuted)
+                _micWavWriter?.Write(new byte[e.BytesRecorded], 0, e.BytesRecorded);
+            else
+            {
+                _micWavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
+                UpdatePeakLevel(CalculateLevelPcm16(e.Buffer, e.BytesRecorded));
+            }
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  LIVE CHUNK SPLIT
+    // ──────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Atomically splits the recording without stopping the audio devices.
+    /// Swaps writers so callbacks immediately target the new chunk; finalizes
+    /// and converts the completed chunk in the background.
+    /// </summary>
+    /// <param name="newOutputPath">Output file path for the next chunk.</param>
+    /// <returns>Path of the fully converted completed chunk, or null if not recording.</returns>
+    public async Task<string?> SplitChunkAsync(string newOutputPath)
+    {
+        if (!_isRecording) return null;
+
+        Directory.CreateDirectory(Path.GetDirectoryName(newOutputPath)!);
+
+        var newTempWavPath = Path.ChangeExtension(newOutputPath, ".tmp.wav");
+        var newTempDir  = Path.GetDirectoryName(newTempWavPath)!;
+        var newTempStem = Path.GetFileNameWithoutExtension(newTempWavPath);
+        var newMicTempPath = Path.Combine(newTempDir, newTempStem + ".mic.wav");
+
+        // Create writers for the next chunk before acquiring the lock
+        var newWavWriter = new WaveFileWriter(newTempWavPath, _systemCapture!.WaveFormat);
+        WaveFileWriter? newMicWavWriter = _micCapture != null && _micWavWriter != null
+            ? new WaveFileWriter(newMicTempPath, _micCapture.WaveFormat)
+            : null;
+
+        // Capture completed-chunk state and atomically swap writers
+        string  completedOutputPath;
+        string  oldTempWavPath;
+        string? oldMicTempPath;
+        WaveFileWriter? oldWavWriter;
+        WaveFileWriter? oldMicWavWriter;
+
+        lock (_writerLock)
+        {
+            completedOutputPath = _finalOutputPath!;
+            oldTempWavPath      = _tempWavPath!;
+            oldMicTempPath      = _micTempPath;
+            oldWavWriter        = _wavWriter;
+            oldMicWavWriter     = _micWavWriter;
+
+            _finalOutputPath  = newOutputPath;
+            _tempWavPath      = newTempWavPath;
+            _micTempPath      = newMicTempPath;
+            _wavWriter        = newWavWriter;
+            _micWavWriter     = newMicWavWriter;
+            _loopbackPadded   = false;
+            _captureStartTime = DateTime.UtcNow;
+        }
+
+        // Flush and dispose old writers — callbacks no longer reference them
+        oldWavWriter?.Flush();
+        oldWavWriter?.Dispose();
+        oldMicWavWriter?.Flush();
+        oldMicWavWriter?.Dispose();
+
+        // Convert completed chunk to final format on background thread
+        await Task.Run(() =>
+        {
+            try
+            {
+                if (File.Exists(oldTempWavPath))
+                {
+                    if (_requestedFormat == "MP3")
+                        ConvertAndMix(oldTempWavPath, oldMicTempPath, completedOutputPath, _requestedBitrate);
+                    else
+                        MixToWav(oldTempWavPath, oldMicTempPath, completedOutputPath);
+                }
+            }
+            finally
+            {
+                DeleteFileIfExists(oldTempWavPath);
+                DeleteFileIfExists(oldMicTempPath);
+            }
+        });
+
+        return completedOutputPath;
     }
 
     /// <summary>Thread-safe peak-hold: keeps the highest level seen since last timer tick.</summary>

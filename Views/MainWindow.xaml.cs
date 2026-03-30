@@ -125,6 +125,7 @@ public partial class MainWindow : Window
             MeetingList.ItemsSource = _vm.Meetings;
             NewMeetingButton.Visibility = Visibility.Visible; // new folder auto-selects
             UpdateFolderTitle();
+            ShowEmptyState(); // show empty content area for the newly created (empty) folder
         }
     }
 

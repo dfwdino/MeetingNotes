@@ -331,31 +331,31 @@
             <!-- Header -->
             <Grid Grid.Row="0" Margin="16,16,16,12">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="FolderTitleText" Text="All Meetings"
+                <!-- Collapse panel button — left side so it can't be confused with + New -->
+                <Button x:Name="CollapseListButton" Grid.Column="0"
+                        Content="◀" ToolTip="Hide meeting list"
+                        Style="{DynamicResource GhostButton}"
+                        Padding="6,5" FontSize="13" Margin="0,0,4,0" Foreground="{DynamicResource TextSecondaryBrush}"
+                        Click="CollapseListButton_Click"/>
+                <TextBlock x:Name="FolderTitleText" Grid.Column="1" Text="All Meetings"
                            Foreground="{DynamicResource HeaderTextBrush}" FontSize="16" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
-                <Button x:Name="NewMeetingButton" Grid.Column="1" Content="＋  New"
-                        Style="{DynamicResource PrimaryButton}"
-                        Padding="10,5" FontSize="12" Margin="0,0,6,0"
-                        Visibility="Collapsed"
-                        Click="NewMeetingButton_Click"/>
                 <!-- Search toggle button -->
                 <Button x:Name="SearchToggleButton" Grid.Column="2"
                         Content="🔍" ToolTip="Search meetings"
                         Style="{DynamicResource GhostButton}"
                         Padding="6,5" FontSize="13" Margin="0,0,2,0"
                         Click="SearchToggle_Click"/>
-                <!-- Collapse panel button -->
-                <Button x:Name="CollapseListButton" Grid.Column="3"
-                        Content="◀" ToolTip="Hide meeting list"
-                        Style="{DynamicResource GhostButton}"
-                        Padding="6,5" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
-                        Click="CollapseListButton_Click"/>
+                <Button x:Name="NewMeetingButton" Grid.Column="3" Content="＋  New"
+                        Style="{DynamicResource PrimaryButton}"
+                        Padding="10,5" FontSize="12" Margin="4,0,0,0"
+                        Visibility="Collapsed"
+                        Click="NewMeetingButton_Click"/>
             </Grid>
 
             <!-- Search — hidden by default, toggled by 🔍 button -->

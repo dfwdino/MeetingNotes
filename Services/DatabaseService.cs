@@ -18,28 +18,28 @@ public class DatabaseService
     {
         await _db.Database.EnsureCreatedAsync();
 
-        // Safely add columns for existing installs that predate these features
-        try
-        {
-            await _db.Database.ExecuteSqlRawAsync(@"
-                IF NOT EXISTS (SELECT * FROM sys.columns
-                               WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsDeleted')
-                    ALTER TABLE Meetings ADD IsDeleted BIT NOT NULL DEFAULT 0;
+        //// Safely add columns for existing installs that predate these features
+        //try
+        //{
+        //    await _db.Database.ExecuteSqlRawAsync(@"
+        //        IF NOT EXISTS (SELECT * FROM sys.columns
+        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsDeleted')
+        //            ALTER TABLE Meetings ADD IsDeleted BIT NOT NULL DEFAULT 0;
 
-                IF NOT EXISTS (SELECT * FROM sys.columns
-                               WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'DeletedDate')
-                    ALTER TABLE Meetings ADD DeletedDate DATETIME2 NULL;
+        //        IF NOT EXISTS (SELECT * FROM sys.columns
+        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'DeletedDate')
+        //            ALTER TABLE Meetings ADD DeletedDate DATETIME2 NULL;
 
-                IF NOT EXISTS (SELECT * FROM sys.columns
-                               WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsHiddenFromTrash')
-                    ALTER TABLE Meetings ADD IsHiddenFromTrash BIT NOT NULL DEFAULT 0;
+        //        IF NOT EXISTS (SELECT * FROM sys.columns
+        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsHiddenFromTrash')
+        //            ALTER TABLE Meetings ADD IsHiddenFromTrash BIT NOT NULL DEFAULT 0;
 
-                IF NOT EXISTS (SELECT * FROM sys.columns
-                               WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'AudioFilePaths')
-                    ALTER TABLE Meetings ADD AudioFilePaths NVARCHAR(MAX) NULL;
-            ");
-        }
-        catch { /* columns already exist — ignore */ }
+        //        IF NOT EXISTS (SELECT * FROM sys.columns
+        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'AudioFilePaths')
+        //            ALTER TABLE Meetings ADD AudioFilePaths NVARCHAR(MAX) NULL;
+        //    ");
+        //}
+        //catch { /* columns already exist — ignore */ }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────

@@ -76,7 +76,7 @@
                 <Button x:Name="TabMyNotes" Content="My Notes"
                         Click="Tab_Click" Tag="MyNotes">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{DynamicResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
                             <Setter Property="Padding" Value="16,12"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -87,7 +87,7 @@
                 <Button x:Name="TabTranscript" Content="Transcript"
                         Click="Tab_Click" Tag="Transcript">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{DynamicResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
                             <Setter Property="Padding" Value="16,12"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -98,7 +98,7 @@
                 <Button x:Name="TabSummary" Content="AI Summary"
                         Click="Tab_Click" Tag="Summary">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{DynamicResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
                             <Setter Property="Padding" Value="16,12"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="BorderThickness" Value="0,0,0,2"/>
@@ -109,7 +109,7 @@
                 <Button x:Name="TabChat" Content="Ask Questions"
                         Click="Tab_Click" Tag="Chat">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{DynamicResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
                             <Setter Property="Padding" Value="16,12"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="BorderThickness" Value="0,0,0,2"/>

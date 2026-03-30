@@ -27,10 +27,10 @@
                     </StackPanel>
                 </Border>
                 <TextBlock Grid.Column="1" x:Name="MeetingTitleText"
-                           Foreground="White" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource HeaderTextBrush}" FontSize="15" FontWeight="SemiBold"
                            VerticalAlignment="Center" Margin="12,0"/>
-                <Border Grid.Column="2" Background="#FF2A2A2A" CornerRadius="4" Padding="8,3">
-                    <TextBlock x:Name="FolderBadgeText" Foreground="#FF888888" FontSize="11"/>
+                <Border Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="4" Padding="8,3">
+                    <TextBlock x:Name="FolderBadgeText" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
                 </Border>
             </Grid>
         </Border>
@@ -40,9 +40,9 @@
 
             <!-- Timer -->
             <TextBlock x:Name="TimerText" Text="00:00:00"
-                       Foreground="White" FontSize="34" FontWeight="Light"
+                       Foreground="{DynamicResource TextPrimaryBrush}" FontSize="34" FontWeight="Light"
                        HorizontalAlignment="Center"/>
-            <TextBlock Text="Recording in progress" Foreground="#FF555555"
+            <TextBlock Text="Recording in progress" Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="11" HorizontalAlignment="Center"
                        Margin="0,2,0,10"/>
 
@@ -62,22 +62,28 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Audio source badges -->
+            <!-- Audio source badges — click to mute/unmute for this session -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,14">
-                <Border Background="#FF151F15" BorderBrush="#FF1A3D1A" BorderThickness="1"
-                        CornerRadius="6" Padding="12,5" Margin="0,0,8,0">
+                <Border x:Name="LoopbackBorder" Background="#FF151F15" BorderBrush="#FF1A3D1A"
+                        BorderThickness="1" CornerRadius="6" Padding="12,5" Margin="0,0,8,0"
+                        Cursor="Hand" ToolTip="Click to mute/unmute system audio"
+                        MouseLeftButtonUp="LoopbackBorder_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="6" Height="6" Fill="#FF4CAF50"
+                        <Ellipse x:Name="LoopbackDot" Width="6" Height="6" Fill="#FF4CAF50"
                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="System Audio" Foreground="#FF4CAF50" FontSize="11"/>
+                        <TextBlock x:Name="LoopbackLabel" Text="System Audio"
+                                   Foreground="#FF4CAF50" FontSize="11"/>
                     </StackPanel>
                 </Border>
                 <Border x:Name="MicBorder" Background="#FF151F15" BorderBrush="#FF1A3D1A"
-                        BorderThickness="1" CornerRadius="6" Padding="12,5">
+                        BorderThickness="1" CornerRadius="6" Padding="12,5"
+                        Cursor="Hand" ToolTip="Click to mute/unmute microphone"
+                        MouseLeftButtonUp="MicBorder_Click">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="6" Height="6" Fill="#FF4CAF50"
+                        <Ellipse x:Name="MicDot" Width="6" Height="6" Fill="#FF4CAF50"
                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="Microphone" Foreground="#FF4CAF50" FontSize="11"/>
+                        <TextBlock x:Name="MicLabel" Text="Microphone"
+                                   Foreground="#FF4CAF50" FontSize="11"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -103,7 +109,7 @@
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <TextBlock Text="Click to stop recording" Foreground="#FF555555"
+            <TextBlock Text="Click to stop recording" Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0"/>
 
         </StackPanel>
@@ -115,7 +121,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="QUICK NOTES" Foreground="#FF555555" FontSize="11"
+                <TextBlock Grid.Row="0" Text="QUICK NOTES" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
                            FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <TextBox Grid.Row="1" x:Name="QuickNotesBox"
                          Style="{DynamicResource DarkTextBox}"

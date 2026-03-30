@@ -15,11 +15,11 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <TextBlock Text="🎙️" FontSize="22" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Processing your meeting" Foreground="White"
+                <TextBlock Text="Processing your meeting" Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </StackPanel>
             <TextBlock x:Name="StatusText" Text="Preparing..."
-                       Foreground="#FF888888" FontSize="12" Margin="0,0,0,12"/>
+                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
 
             <!-- Steps side by side -->
             <Grid>
@@ -44,10 +44,10 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Transcribing" Foreground="White"
+                            <TextBlock Text="Transcribing" Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="12" FontWeight="Medium"/>
                             <TextBlock x:Name="TranscribeStatusText" Text="Waiting"
-                                       Foreground="#FF666666" FontSize="11" Margin="0,1,0,0"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,1,0,0"/>
                         </StackPanel>
                         <TextBlock x:Name="Step1Check" Grid.Column="2" Text="✓"
                                    Foreground="#FF4CAF50" FontSize="15" VerticalAlignment="Center"
@@ -70,10 +70,10 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Summarizing" Foreground="White"
+                            <TextBlock Text="Summarizing" Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="12" FontWeight="Medium"/>
                             <TextBlock x:Name="SummarizeStatusText" Text="Waiting"
-                                       Foreground="#FF666666" FontSize="11" Margin="0,1,0,0"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,1,0,0"/>
                         </StackPanel>
                         <TextBlock x:Name="Step2Check" Grid.Column="2" Text="✓"
                                    Foreground="#FF4CAF50" FontSize="15" VerticalAlignment="Center"
@@ -89,11 +89,11 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="LIVE TRANSCRIPT PREVIEW" Foreground="#FF888888"
+            <TextBlock Grid.Row="0" Text="LIVE TRANSCRIPT PREVIEW" Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
             <Border Grid.Row="1" Background="{DynamicResource InputBackgroundBrush}" CornerRadius="6" Padding="14,10">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBlock x:Name="LivePreviewText" Foreground="#FFCCCCCC"
+                    <TextBlock x:Name="LivePreviewText" Foreground="{DynamicResource TextPrimaryBrush}"
                                FontSize="13" TextWrapping="Wrap" LineHeight="22"/>
                 </ScrollViewer>
             </Border>

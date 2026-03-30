@@ -57,6 +57,9 @@ public partial class App : System.Windows.Application
             }
         }
 
+        // Clean up any orphaned temp audio files left by a previous crash or force-close
+        CleanupOrphanedTempFiles(settings.RecordingsFolder);
+
         // Show main window
         var mainWindow = GetService<MainWindow>();
         SetupTrayIcon(mainWindow, settings);
@@ -75,6 +78,20 @@ public partial class App : System.Windows.Application
             });
         };
         monitor.Start();
+    }
+
+    /// <summary>
+    /// Delete any *.tmp.wav and *.tmp.mic.wav files left behind by a previous
+    /// unclean shutdown (crash / force-close before StopRecording could run).
+    /// </summary>
+    private static void CleanupOrphanedTempFiles(string recordingsFolder)
+    {
+        if (!Directory.Exists(recordingsFolder)) return;
+        foreach (var file in Directory.EnumerateFiles(recordingsFolder, "*.tmp.wav")
+            .Concat(Directory.EnumerateFiles(recordingsFolder, "*.tmp.mic.wav")))
+        {
+            try { File.Delete(file); } catch { }
+        }
     }
 
     private static void EnsureCleanDatabaseRegistration(string newMdfPath)

@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using WpfMsgBox = System.Windows.MessageBox;
 
 namespace MeetingNotes.Views;
 
@@ -101,6 +102,75 @@ public partial class RecordingView : Page
 
         _isRecording = false;
         RecordingStopped?.Invoke(this, _meeting.Id);
+    }
+
+    private void LoopbackBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!_isRecording) return;
+
+        bool currentlyMuted = _audio.IsLoopbackMuted;
+        if (!currentlyMuted)
+        {
+            var result = WpfMsgBox.Show(
+                "Mute system audio (loopback) for the rest of this recording?\n\n" +
+                "The recording will continue — system audio will be replaced with silence from this point on.",
+                "Mute System Audio?",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+        }
+
+        _audio.SetLoopbackMuted(!currentlyMuted);
+        UpdateBadgeState(LoopbackBorder, LoopbackDot, LoopbackLabel,
+            "System Audio", _audio.IsLoopbackMuted);
+    }
+
+    private void MicBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!_isRecording) return;
+
+        bool currentlyMuted = _audio.IsMicMuted;
+        if (!currentlyMuted)
+        {
+            var result = WpfMsgBox.Show(
+                "Mute the microphone for the rest of this recording?\n\n" +
+                "The recording will continue — microphone audio will be replaced with silence from this point on.",
+                "Mute Microphone?",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+        }
+
+        _audio.SetMicMuted(!currentlyMuted);
+        UpdateBadgeState(MicBorder, MicDot, MicLabel,
+            "Microphone", _audio.IsMicMuted);
+    }
+
+    private static void UpdateBadgeState(Border border, System.Windows.Shapes.Ellipse dot,
+        System.Windows.Controls.TextBlock label, string baseName, bool muted)
+    {
+        if (muted)
+        {
+            border.Background  = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(30, 20, 20));
+            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(80, 30, 30));
+            dot.Fill   = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(150, 50, 50));
+            label.Text       = baseName + " (muted)";
+            label.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(150, 50, 50));
+        }
+        else
+        {
+            border.Background  = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(21, 31, 21));
+            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(26, 61, 26));
+            dot.Fill   = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(76, 175, 80));
+            label.Text       = baseName;
+            label.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(76, 175, 80));
+        }
     }
 
     private void OnAudioLevel(object? sender, float level)
