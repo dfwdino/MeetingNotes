@@ -19,6 +19,16 @@ public partial class MainWindow : Window
         FolderList.ItemsSource = _vm.Folders;
         MeetingList.ItemsSource = _vm.Meetings;
         Loaded += OnLoaded;
+
+        // Append version from <Version> in .csproj to the title bar (strip +git-hash suffix)
+        var rawVer = (System.Reflection.Assembly
+            .GetExecutingAssembly()
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute)
+            ?.InformationalVersion ?? string.Empty;
+        var ver = rawVer.Contains('+') ? rawVer[..rawVer.IndexOf('+')] : rawVer;
+        if (!string.IsNullOrEmpty(ver))
+            Title = $"Meeting Notes  v{ver}";
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
