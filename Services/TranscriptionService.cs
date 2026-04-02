@@ -97,5 +97,12 @@ public class TranscriptionService
         _        => GgmlType.Base
     };
 
+    public void UnloadModel()
+    {
+        _factory?.Dispose();
+        _factory = null;
+        _loadedModelPath = null;
+    }
+
     public void Dispose() => _factory?.Dispose();
 }

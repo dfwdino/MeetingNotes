@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
         Title="Meeting Notes — First Run Setup"
-        Height="460" Width="520"
+        SizeToContent="Height" Width="520" MinHeight="420"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource AppBackgroundBrush}">
@@ -46,7 +46,7 @@
                            Foreground="#FF888888" FontSize="12"
                            HorizontalAlignment="Right"/>
             </Grid>
-            <Border Background="{DynamicResource InputBackgroundBrush}" CornerRadius="4" Height="6">
+            <Border x:Name="ProgressBarTrack" Background="{DynamicResource InputBackgroundBrush}" CornerRadius="4" Height="6">
                 <Border x:Name="ProgressBar" Background="#FF0078D4"
                         CornerRadius="4" HorizontalAlignment="Left" Width="0"/>
             </Border>

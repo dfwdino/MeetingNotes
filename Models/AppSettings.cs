@@ -44,4 +44,13 @@ public class AppSettings
     public bool AppWatcherEnabled { get; set; } = false;
     /// <summary>Comma-separated list of process names (partial match) to watch.</summary>
     public string WatchedApps { get; set; } = string.Empty;
+
+    // Logging
+    public bool LogToDatabase { get; set; } = true;
+    public bool LogToFile { get; set; } = false;
+    /// <summary>
+    /// Where log files are written. Relative paths are appended to the app directory.
+    /// Absolute paths (drive letter) and UNC paths (\\server\share) are used as-is.
+    /// </summary>
+    public string LogFolder { get; set; } = Path.Combine(AppContext.BaseDirectory, "Data", "Logs");
 }

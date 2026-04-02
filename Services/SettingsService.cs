@@ -46,6 +46,10 @@ public static class SettingsService
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                     ".cache", "whisper.net"));
 
+            settings.LogFolder = ResolvePath(
+                settings.LogFolder,
+                Path.Combine(AppContext.BaseDirectory, "Data", "Logs"));
+
             return settings;
         }
         catch
@@ -73,8 +77,12 @@ public static class SettingsService
 
         // Path.IsPathRooted returns true for both "C:\..." AND "\relative" on Windows.
         // A drive letter is detected by the second character being ':'.
+        // A UNC network path starts with \\.
         if (path.Length >= 2 && path[1] == ':')
-            return path;   // absolute — use exactly as typed
+            return path;   // absolute drive path — use exactly as typed
+
+        if (path.Length >= 2 && path[0] == '\\' && path[1] == '\\')
+            return path;   // UNC network path (\\server\share) — use exactly as typed
 
         // Relative (starts with \ or just a folder name) — anchor to the app folder
         return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, path.TrimStart('\\', '/')));

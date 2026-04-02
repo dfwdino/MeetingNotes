@@ -7,113 +7,109 @@ namespace MeetingNotes.Services;
 
 public class DatabaseService
 {
-    private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public DatabaseService(AppDbContext db)
+    public DatabaseService(IDbContextFactory<AppDbContext> dbFactory)
     {
-        _db = db;
+        _dbFactory = dbFactory;
     }
 
     public async Task InitializeAsync()
     {
-        await _db.Database.EnsureCreatedAsync();
-
-        //// Safely add columns for existing installs that predate these features
-        //try
-        //{
-        //    await _db.Database.ExecuteSqlRawAsync(@"
-        //        IF NOT EXISTS (SELECT * FROM sys.columns
-        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsDeleted')
-        //            ALTER TABLE Meetings ADD IsDeleted BIT NOT NULL DEFAULT 0;
-
-        //        IF NOT EXISTS (SELECT * FROM sys.columns
-        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'DeletedDate')
-        //            ALTER TABLE Meetings ADD DeletedDate DATETIME2 NULL;
-
-        //        IF NOT EXISTS (SELECT * FROM sys.columns
-        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'IsHiddenFromTrash')
-        //            ALTER TABLE Meetings ADD IsHiddenFromTrash BIT NOT NULL DEFAULT 0;
-
-        //        IF NOT EXISTS (SELECT * FROM sys.columns
-        //                       WHERE object_id = OBJECT_ID(N'Meetings') AND name = N'AudioFilePaths')
-        //            ALTER TABLE Meetings ADD AudioFilePaths NVARCHAR(MAX) NULL;
-        //    ");
-        //}
-        //catch { /* columns already exist — ignore */ }
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        await db.Database.EnsureCreatedAsync();
     }
 
     // ── Folders ──────────────────────────────────────────────────────────
-    public async Task<List<MeetingFolder>> GetFoldersAsync() =>
-        await _db.Folders
+    public async Task<List<MeetingFolder>> GetFoldersAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Folders
             .OrderBy(f => f.Name)
             .Include(f => f.Meetings.Where(m => !m.IsDeleted))
             .ToListAsync();
+    }
 
     public async Task<MeetingFolder> CreateFolderAsync(string name)
     {
+        await using var db = await _dbFactory.CreateDbContextAsync();
         var folder = new MeetingFolder { Name = name };
-        _db.Folders.Add(folder);
-        await _db.SaveChangesAsync();
+        db.Folders.Add(folder);
+        await db.SaveChangesAsync();
         return folder;
     }
 
     public async Task RenameFolderAsync(int id, string newName)
     {
-        var folder = await _db.Folders.FindAsync(id);
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var folder = await db.Folders.FindAsync(id);
         if (folder is null) return;
         folder.Name = newName;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
 
     public async Task MoveMeetingAsync(int meetingId, int targetFolderId)
     {
-        var meeting = await _db.Meetings.FindAsync(meetingId);
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var meeting = await db.Meetings.FindAsync(meetingId);
         if (meeting is null) return;
         meeting.FolderId = targetFolderId;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
 
     public async Task DeleteFolderAsync(int id)
     {
-        // Soft-delete all meetings in the folder first
-        var meetings = await _db.Meetings.Where(m => m.FolderId == id).ToListAsync();
-        foreach (var m in meetings)
-            await SoftDeleteMeetingAsync(m);
+        await using var db = await _dbFactory.CreateDbContextAsync();
 
-        var folder = await _db.Folders.FindAsync(id);
+        var meetings = await db.Meetings.Where(m => m.FolderId == id).ToListAsync();
+        foreach (var m in meetings)
+            SoftDeleteFiles(m);
+
+        var folder = await db.Folders.FindAsync(id);
         if (folder is null) return;
-        _db.Folders.Remove(folder);
-        await _db.SaveChangesAsync();
+        db.Folders.Remove(folder);
+        await db.SaveChangesAsync();
     }
 
     // ── Meetings ─────────────────────────────────────────────────────────
-    public async Task<List<Meeting>> GetMeetingsForFolderAsync(int folderId) =>
-        await _db.Meetings
+    public async Task<List<Meeting>> GetMeetingsForFolderAsync(int folderId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings
             .Where(m => m.FolderId == folderId && !m.IsDeleted)
             .OrderByDescending(m => m.CreatedDate)
             .ToListAsync();
+    }
 
-    public async Task<List<Meeting>> GetDeletedMeetingsAsync() =>
-        await _db.Meetings
+    public async Task<List<Meeting>> GetDeletedMeetingsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings
             .Where(m => m.IsDeleted && !m.IsHiddenFromTrash)
             .OrderByDescending(m => m.DeletedDate)
             .ToListAsync();
+    }
 
-    public async Task<Meeting?> GetMeetingAsync(int id) =>
-        await _db.Meetings.FindAsync(id);
+    public async Task<Meeting?> GetMeetingAsync(int id)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings.FindAsync(id);
+    }
 
     public async Task<Meeting> CreateMeetingAsync(int folderId, string title)
     {
+        await using var db = await _dbFactory.CreateDbContextAsync();
         var meeting = new Meeting { FolderId = folderId, Title = title };
-        _db.Meetings.Add(meeting);
-        await _db.SaveChangesAsync();
+        db.Meetings.Add(meeting);
+        await db.SaveChangesAsync();
         return meeting;
     }
 
     public async Task UpdateMeetingAsync(Meeting meeting)
     {
-        _db.Meetings.Update(meeting);
-        await _db.SaveChangesAsync();
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        db.Meetings.Update(meeting);
+        await db.SaveChangesAsync();
     }
 
     /// <summary>
@@ -122,14 +118,48 @@ public class DatabaseService
     /// </summary>
     public async Task DeleteMeetingAsync(int id)
     {
-        var meeting = await _db.Meetings.FindAsync(id);
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var meeting = await db.Meetings.FindAsync(id);
         if (meeting is null) return;
-        await SoftDeleteMeetingAsync(meeting);
+
+        SoftDeleteFiles(meeting);
+        meeting.IsDeleted      = true;
+        meeting.DeletedDate    = DateTime.Now;
+        meeting.AudioFilePath  = null;
+        meeting.AudioFilePaths = null;
+        db.Meetings.Update(meeting);
+        await db.SaveChangesAsync();
     }
 
-    private async Task SoftDeleteMeetingAsync(Meeting meeting)
+    /// <summary>
+    /// Restore a soft-deleted meeting back to its folder.
+    /// </summary>
+    public async Task RestoreMeetingAsync(int id)
     {
-        // Delete every audio file ever recorded for this meeting
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var meeting = await db.Meetings.FindAsync(id);
+        if (meeting is null) return;
+        meeting.IsDeleted   = false;
+        meeting.DeletedDate = null;
+        db.Meetings.Update(meeting);
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Hides a meeting from the Trash view without removing it from the database.
+    /// </summary>
+    public async Task HideFromTrashAsync(int id)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var meeting = await db.Meetings.FindAsync(id);
+        if (meeting is null) return;
+        meeting.IsHiddenFromTrash = true;
+        db.Meetings.Update(meeting);
+        await db.SaveChangesAsync();
+    }
+
+    private static void SoftDeleteFiles(Meeting meeting)
+    {
         if (!string.IsNullOrEmpty(meeting.AudioFilePaths))
         {
             foreach (var path in meeting.AudioFilePaths.Split(';',
@@ -138,39 +168,8 @@ public class DatabaseService
         }
         else
         {
-            // Fallback for meetings recorded before AudioFilePaths was added
             DeleteFileIfExists(meeting.AudioFilePath);
         }
-
-        meeting.IsDeleted     = true;
-        meeting.DeletedDate   = DateTime.Now;
-        meeting.AudioFilePath  = null;
-        meeting.AudioFilePaths = null;
-        await UpdateMeetingAsync(meeting);
-    }
-
-    /// <summary>
-    /// Restore a soft-deleted meeting back to its folder.
-    /// </summary>
-    public async Task RestoreMeetingAsync(int id)
-    {
-        var meeting = await _db.Meetings.FindAsync(id);
-        if (meeting is null) return;
-        meeting.IsDeleted   = false;
-        meeting.DeletedDate = null;
-        await UpdateMeetingAsync(meeting);
-    }
-
-    /// <summary>
-    /// Hides a meeting from the Trash view without removing it from the database.
-    /// The record is preserved indefinitely; only manual SQL can remove it.
-    /// </summary>
-    public async Task HideFromTrashAsync(int id)
-    {
-        var meeting = await _db.Meetings.FindAsync(id);
-        if (meeting is null) return;
-        meeting.IsHiddenFromTrash = true;
-        await UpdateMeetingAsync(meeting);
     }
 
     private static void DeleteFileIfExists(string? path)
@@ -179,28 +178,36 @@ public class DatabaseService
             try { File.Delete(path); } catch { /* locked or already gone */ }
     }
 
-    // Chat
-    public async Task<List<ChatMessage>> GetChatMessagesAsync(int meetingId) =>
-        await _db.ChatMessages
+    // ── Chat ─────────────────────────────────────────────────────────────
+    public async Task<List<ChatMessage>> GetChatMessagesAsync(int meetingId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.ChatMessages
             .Where(c => c.MeetingId == meetingId)
             .OrderBy(c => c.Timestamp)
             .ToListAsync();
+    }
 
     public async Task<ChatMessage> AddChatMessageAsync(int meetingId, ChatRole role, string content)
     {
+        await using var db = await _dbFactory.CreateDbContextAsync();
         var msg = new ChatMessage { MeetingId = meetingId, Role = role, Content = content };
-        _db.ChatMessages.Add(msg);
-        await _db.SaveChangesAsync();
+        db.ChatMessages.Add(msg);
+        await db.SaveChangesAsync();
         return msg;
     }
 
-    // Settings
-    public async Task<AppSettings> GetSettingsAsync() =>
-        await _db.Settings.FirstAsync();
+    // ── Settings ─────────────────────────────────────────────────────────
+    public async Task<AppSettings> GetSettingsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Settings.FirstAsync();
+    }
 
     public async Task SaveSettingsAsync(AppSettings settings)
     {
-        _db.Settings.Update(settings);
-        await _db.SaveChangesAsync();
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        db.Settings.Update(settings);
+        await db.SaveChangesAsync();
     }
 }

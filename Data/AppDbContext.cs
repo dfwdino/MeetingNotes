@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Meeting> Meetings { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
     public DbSet<AppSettings> Settings { get; set; }
+    public DbSet<LogEntry> LogEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

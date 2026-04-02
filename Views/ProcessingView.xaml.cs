@@ -34,16 +34,39 @@ public partial class ProcessingView : Page
 
         _vm.StepChanged   += (_, step) => Dispatcher.Invoke(() => UpdateStepUI(step));
         _vm.StatusChanged += (_, msg)  => Dispatcher.Invoke(() => StatusText.Text = msg);
-        _vm.ProcessingComplete += (_, m) => ProcessingComplete?.Invoke(this, m);
-        _vm.ErrorOccurred += (_, err)  => Dispatcher.Invoke(() => ShowError(err.message));
+        _vm.ProcessingComplete    += (_, m)   => ProcessingComplete?.Invoke(this, m);
+        _vm.ErrorOccurred         += (_, err) => Dispatcher.Invoke(() => ShowError(err.message));
+        _vm.WhisperSetupRequired  += (_, m)   => Dispatcher.Invoke(() => HandleWhisperSetup(m));
 
         await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript);
     }
 
     private void ShowError(string message)
     {
-        ErrorText.Text    = message;
+        ErrorText.Text        = message;
         ErrorPanel.Visibility = System.Windows.Visibility.Visible;
+    }
+
+    private async void HandleWhisperSetup(Meeting meeting)
+    {
+        // Delete the bad model file so SetupView re-downloads it fresh
+        var settings = App.GetService<AppSettings>();
+        var modelPath = System.IO.Path.Combine(
+            settings.WhisperCacheFolder,
+            $"ggml-{settings.WhisperModel.ToLower()}.bin");
+        try { System.IO.File.Delete(modelPath); } catch { }
+
+        var setup = App.GetService<SetupView>();
+        if (setup.ShowDialog() != true)
+        {
+            ShowError("Whisper model is required for transcription. Download it from Settings.");
+            return;
+        }
+
+        // Model re-downloaded — retry processing automatically
+        ErrorPanel.Visibility = System.Windows.Visibility.Collapsed;
+        LivePreviewText.Text  = string.Empty;
+        await _vm.ProcessMeetingAsync(meeting);
     }
 
     private async void RetryButton_Click(object sender, System.Windows.RoutedEventArgs e)

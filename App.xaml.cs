@@ -43,18 +43,12 @@ public partial class App : System.Windows.Application
         var ollama = GetService<OllamaService>();
         ollama.Configure(settings.OllamaServerUrl, settings.OllamaDefaultModel);
 
-        // Check if Whisper model exists — show setup if not
-        var whisperModelPath = Path.Combine(settings.WhisperCacheFolder,
-            $"ggml-{settings.WhisperModel.ToLower()}.bin");
-
-        if (!File.Exists(whisperModelPath))
+        // Verify the Whisper model exists AND loads correctly every startup.
+        // A file that exists but is corrupt/truncated will crash later — catch it here.
+        if (!await EnsureWhisperReadyAsync(settings))
         {
-            var setup = GetService<SetupView>();
-            if (setup.ShowDialog() != true)
-            {
-                Shutdown();
-                return;
-            }
+            Shutdown();
+            return;
         }
 
         // Clean up any orphaned temp audio files left by a previous crash or force-close
@@ -78,6 +72,43 @@ public partial class App : System.Windows.Application
             });
         };
         monitor.Start();
+    }
+
+    /// <summary>
+    /// Checks that the Whisper model file exists and can actually be loaded.
+    /// If the file is missing or corrupt, shows the setup dialog to re-download it.
+    /// Returns false if the user cancels setup (caller should shut down).
+    /// </summary>
+    private static async Task<bool> EnsureWhisperReadyAsync(AppSettings settings)
+    {
+        var transcription = GetService<TranscriptionService>();
+
+        while (true)
+        {
+            var modelPath = Path.Combine(settings.WhisperCacheFolder,
+                $"ggml-{settings.WhisperModel.ToLower()}.bin");
+
+            // Try to load the model — this catches missing file, corrupt/truncated
+            // downloads, and native runtime failures all in one place.
+            if (File.Exists(modelPath))
+            {
+                try
+                {
+                    await Task.Run(() => transcription.LoadModel(modelPath));
+                    return true;  // model loaded successfully
+                }
+                catch
+                {
+                    // File exists but is unusable — delete it so setup re-downloads it
+                    try { File.Delete(modelPath); } catch { }
+                }
+            }
+
+            // File missing or just deleted — show setup dialog
+            var setup = GetService<SetupView>();
+            if (setup.ShowDialog() != true)
+                return false;  // user cancelled
+        }
     }
 
     /// <summary>
@@ -148,10 +179,11 @@ public partial class App : System.Windows.Application
 
         var connectionString = $"Server=(localdb)\\MSSQLLocalDB;Database=MeetingNotes;Trusted_Connection=True;AttachDbFilename={newMdfPath}";
 
-        services.AddDbContext<AppDbContext>(opt =>
+        services.AddDbContextFactory<AppDbContext>(opt =>
             opt.UseSqlServer(connectionString));
 
         // Services
+        services.AddSingleton<IAppLogger, AppLogger>();
         services.AddSingleton<DatabaseService>();
         services.AddSingleton<AudioCaptureService>();
         services.AddSingleton<TranscriptionService>();

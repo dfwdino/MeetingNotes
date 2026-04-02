@@ -55,7 +55,9 @@ public class OllamaService
     {
         try
         {
-            var models = await GetAvailableModelsAsync();
+            // Call the API directly — GetAvailableModelsAsync swallows exceptions
+            // so it can never tell us the server is unreachable.
+            await GetClient().ListLocalModelsAsync();
             return true;
         }
         catch
@@ -63,6 +65,9 @@ public class OllamaService
             return false;
         }
     }
+
+    public bool IsConfigured() =>
+        !string.IsNullOrWhiteSpace(_serverUrl) && !string.IsNullOrWhiteSpace(_model);
 
     public async Task<string> GenerateSummaryAsync(string transcript, string promptTemplate,
         IProgress<string>? progress = null, CancellationToken cancellationToken = default)

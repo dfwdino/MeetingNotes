@@ -2,6 +2,7 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MeetingNotes.Models;
 using MeetingNotes.Services;
+using Whisper.net;
 
 namespace MeetingNotes.ViewModels;
 
@@ -110,10 +111,25 @@ public partial class ProcessingViewModel : BaseViewModel
             // In append mode: summarize only the new portion, then append to the existing
             // summary so the original is never lost.
             // In normal mode: summarize the full transcript (first run or explicit re-process).
-            StatusMessage = "Generating summary with Ollama...";
-            SummarizingStatus = "In progress";
+            StatusMessage = "Checking Ollama...";
             SummarizingActive = true;
             StepChanged?.Invoke(this, "summarizing");
+
+            string? ollamaWarning = await CheckOllamaAsync();
+            if (ollamaWarning != null)
+            {
+                SummarizingActive = false;
+                SummarizingDone = true;
+                SummarizingStatus = "Skipped";
+                meeting.Status = MeetingStatus.Ready;
+                await _db.UpdateMeetingAsync(meeting);
+                ProcessingComplete?.Invoke(this, meeting);
+                StatusChanged?.Invoke(this, ollamaWarning);
+                return;
+            }
+
+            StatusMessage = "Generating summary with Ollama...";
+            SummarizingStatus = "In progress";
             StatusChanged?.Invoke(this, "Generating summary...");
 
             var textToSummarize = (appendTranscript && !string.IsNullOrWhiteSpace(existingSummary))
@@ -149,6 +165,14 @@ public partial class ProcessingViewModel : BaseViewModel
 
             ProcessingComplete?.Invoke(this, meeting);
         }
+        catch (WhisperModelLoadException)
+        {
+            // The Whisper native runtime failed to load the model — the file may be
+            // corrupt or incomplete. Clear the cached path so the next load retries FromPath,
+            // then signal the view to run setup (re-download) before retrying.
+            _transcription.UnloadModel();
+            WhisperSetupRequired?.Invoke(this, meeting);
+        }
         catch (Exception ex)
         {
             // Save whatever transcript we have so retry can skip transcription
@@ -165,4 +189,31 @@ public partial class ProcessingViewModel : BaseViewModel
     }
 
     public event EventHandler<(string message, Meeting meeting)>? ErrorOccurred;
+    public event EventHandler<Meeting>? WhisperSetupRequired;
+
+    /// <summary>
+    /// Returns a human-readable warning string if Ollama is not usable, or null if it's fine.
+    /// </summary>
+    private async Task<string?> CheckOllamaAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.OllamaServerUrl))
+            return "⚠ No Ollama server URL is configured. Transcription is saved — open Settings to set up Ollama and use Retry to get a summary.";
+
+        if (string.IsNullOrWhiteSpace(_settings.OllamaDefaultModel))
+            return "⚠ No Ollama model is selected. Transcription is saved — open Settings to choose a model and use Retry to get a summary.";
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var reachable = await _ollama.IsAvailableAsync();
+            if (!reachable)
+                return $"⚠ Ollama is not running at {_settings.OllamaServerUrl}. Transcription is saved — start Ollama and use Retry to generate a summary.";
+        }
+        catch
+        {
+            return $"⚠ Could not reach Ollama at {_settings.OllamaServerUrl}. Transcription is saved — start Ollama and use Retry to generate a summary.";
+        }
+
+        return null;
+    }
 }

@@ -15,5 +15,8 @@
   "MinimizeToTrayOnClose": true,
   "ShowTrayTimer": true,
   "AppWatcherEnabled": true,
-  "WatchedApps": "zoom,ms-teams,discord,slack, webex"
+  "WatchedApps": "zoom,ms-teams,discord,slack, webex",
+  "LogToDatabase": true,
+  "LogToFile": false,
+  "LogFolder": "\\Data\\Logs\\"
 }
