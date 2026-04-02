@@ -10,13 +10,13 @@
   "AudioFormat": "MP3",
   "Mp3Bitrate": 64,
   "DeleteAudioAfterTranscription": false,
-  "Theme": "Dark",
+  "Theme": "System",
   "LaunchAtStartup": false,
   "MinimizeToTrayOnClose": true,
   "ShowTrayTimer": true,
   "AppWatcherEnabled": true,
   "WatchedApps": "zoom,ms-teams,discord,slack, webex",
   "LogToDatabase": true,
-  "LogToFile": false,
+  "LogToFile": true,
   "LogFolder": "\\Data\\Logs\\"
 }

@@ -8,14 +8,17 @@ namespace MeetingNotes.Services;
 public class DatabaseService
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private IAppLogger _logger;
 
-    public DatabaseService(IDbContextFactory<AppDbContext> dbFactory)
+    public DatabaseService(IDbContextFactory<AppDbContext> dbFactory, IAppLogger logger )
     {
         _dbFactory = dbFactory;
+        _logger = logger;
     }
 
     public async Task InitializeAsync()
     {
+        _ = _logger.InfoAsync("Initializing database...");
         await using var db = await _dbFactory.CreateDbContextAsync();
         await db.Database.EnsureCreatedAsync();
     }
