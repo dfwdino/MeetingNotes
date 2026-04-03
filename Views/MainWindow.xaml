@@ -401,7 +401,7 @@
                                     <TextBlock Text="{Binding Title}" FontSize="13.5"
                                                FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
                                                Margin="0,0,0,4" TextTrimming="CharacterEllipsis"/>
-                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                         <TextBlock FontSize="11.5" Foreground="#FF666666">
                                             <Run Text="{Binding DateDisplay, Mode=OneWay}"/>
                                             <Run Text=" · "/>
@@ -449,6 +449,21 @@
                                             </TextBlock>
                                         </Border>
                                     </StackPanel>
+                                    <!-- Audio file ID (only shown when a file exists) -->
+                                    <TextBlock Text="{Binding AudioFileName, Mode=OneWay}"
+                                               FontSize="10.5" FontFamily="Consolas"
+                                               Foreground="#FF555555" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AudioFileName, Mode=OneWay}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                                     <!-- Normal: Move + Delete buttons (appear on hover) -->
                                     <StackPanel Grid.Column="1" Orientation="Horizontal"

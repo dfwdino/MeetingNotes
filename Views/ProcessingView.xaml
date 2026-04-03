@@ -25,11 +25,13 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Step 1 -->
+                <!-- Step 1: Save Audio -->
                 <Border Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="12,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -39,7 +41,33 @@
                         </Grid.ColumnDefinitions>
                         <Border Width="26" Height="26" CornerRadius="13" Background="#FF2A2A2A"
                                 Margin="0,0,10,0" VerticalAlignment="Center">
-                            <TextBlock x:Name="Step1Icon" Text="1" Foreground="#FF888888"
+                            <TextBlock x:Name="Step0Icon" Text="1" Foreground="#FF888888"
+                                       FontSize="12" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Saving audio" Foreground="{DynamicResource TextPrimaryBrush}"
+                                       FontSize="12" FontWeight="Medium"/>
+                            <TextBlock x:Name="SaveAudioStatusText" Text="Waiting"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,1,0,0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step0Check" Grid.Column="2" Text="✓"
+                                   Foreground="#FF4CAF50" FontSize="15" VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
+
+                <!-- Step 2: Transcribe -->
+                <Border Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="12,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="26" Height="26" CornerRadius="13" Background="#FF2A2A2A"
+                                Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="Step1Icon" Text="2" Foreground="#FF888888"
                                        FontSize="12" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -55,8 +83,8 @@
                     </Grid>
                 </Border>
 
-                <!-- Step 2 -->
-                <Border Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="12,10">
+                <!-- Step 3: Summarize -->
+                <Border Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="12,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -65,7 +93,7 @@
                         </Grid.ColumnDefinitions>
                         <Border Width="26" Height="26" CornerRadius="13" Background="#FF2A2A2A"
                                 Margin="0,0,10,0" VerticalAlignment="Center">
-                            <TextBlock x:Name="Step2Icon" Text="2" Foreground="#FF888888"
+                            <TextBlock x:Name="Step2Icon" Text="3" Foreground="#FF888888"
                                        FontSize="12" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -81,6 +109,12 @@
                     </Grid>
                 </Border>
             </Grid>
+
+            <!-- Audio file identifier -->
+            <TextBlock x:Name="AudioFileIdText" Text=""
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="11" FontFamily="Consolas" Margin="0,8,0,0"
+                       Visibility="Collapsed"/>
         </StackPanel>
 
         <!-- Live transcript — takes all remaining space -->

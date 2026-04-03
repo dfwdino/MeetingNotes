@@ -46,6 +46,12 @@ public class AudioCaptureService : IDisposable
     public bool    IsLoopbackMuted => _loopbackMuted;
     public string? CurrentFilePath => _finalOutputPath;
 
+    /// <summary>
+    /// Task that completes when the audio file has been fully written and converted.
+    /// Await this before reading or transcribing the audio file.
+    /// </summary>
+    public Task AudioSaveTask { get; private set; } = Task.CompletedTask;
+
     public event EventHandler<float>? AudioLevelChanged;
 
     public void SetMicMuted(bool muted)      => _micMuted      = muted;
@@ -135,22 +141,33 @@ public class AudioCaptureService : IDisposable
 
         _isRecording = false;
 
-        // Always clean up temp files even if conversion throws
-        try
+        // Capture locals so the background task doesn't race on instance fields
+        var tempPath  = _tempWavPath;
+        var micPath   = _micTempPath;
+        var outPath   = _finalOutputPath!;
+        var format    = _requestedFormat;
+        var bitrate   = _requestedBitrate;
+
+        // Run the mix/convert on a background thread so the UI can navigate immediately.
+        // Callers that need to read the finished file should await AudioSaveTask first.
+        AudioSaveTask = Task.Run(() =>
         {
-            if (!string.IsNullOrEmpty(_tempWavPath) && File.Exists(_tempWavPath))
+            try
             {
-                if (_requestedFormat == "MP3")
-                    ConvertAndMix(_tempWavPath, _micTempPath, _finalOutputPath!, _requestedBitrate);
-                else
-                    MixToWav(_tempWavPath, _micTempPath, _finalOutputPath!);
+                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                {
+                    if (format == "MP3")
+                        ConvertAndMix(tempPath, micPath, outPath, bitrate);
+                    else
+                        MixToWav(tempPath, micPath, outPath);
+                }
             }
-        }
-        finally
-        {
-            DeleteFileIfExists(_tempWavPath);
-            DeleteFileIfExists(_micTempPath);
-        }
+            finally
+            {
+                DeleteFileIfExists(tempPath);
+                DeleteFileIfExists(micPath);
+            }
+        });
 
         return _finalOutputPath ?? string.Empty;
     }

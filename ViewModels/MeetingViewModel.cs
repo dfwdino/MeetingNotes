@@ -1,3 +1,4 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MeetingNotes.Models;
 
@@ -17,6 +18,7 @@ public partial class MeetingViewModel : BaseViewModel
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isDeleted;
     [ObservableProperty] private DateTime? _deletedDate;
+    [ObservableProperty] private string? _audioFilePath;
 
     public MeetingViewModel(Meeting meeting)
     {
@@ -31,7 +33,12 @@ public partial class MeetingViewModel : BaseViewModel
         _myNotes = meeting.MyNotes;
         _isDeleted = meeting.IsDeleted;
         _deletedDate = meeting.DeletedDate;
+        _audioFilePath = meeting.AudioFilePath;
     }
+
+    public string AudioFileName => AudioFilePath is not null
+        ? Path.GetFileName(AudioFilePath)
+        : string.Empty;
 
     public string StatusDisplay => Status switch
     {

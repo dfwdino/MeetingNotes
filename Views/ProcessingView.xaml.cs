@@ -81,6 +81,23 @@ public partial class ProcessingView : Page
     {
         switch (step)
         {
+            case "saving-audio":
+                Step0Icon.Foreground = System.Windows.Media.Brushes.White;
+                SaveAudioStatusText.Text = "In progress...";
+                SaveAudioStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(0, 120, 212));
+                if (!string.IsNullOrEmpty(_vm.AudioFileName))
+                {
+                    AudioFileIdText.Text = $"File: {_vm.AudioFileName}";
+                    AudioFileIdText.Visibility = System.Windows.Visibility.Visible;
+                }
+                break;
+            case "audio-saved":
+                Step0Check.Visibility = System.Windows.Visibility.Visible;
+                SaveAudioStatusText.Text = "Done";
+                SaveAudioStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(76, 175, 80));
+                break;
             case "transcribing":
                 Step1Icon.Foreground = System.Windows.Media.Brushes.White;
                 TranscribeStatusText.Text = "In progress...";

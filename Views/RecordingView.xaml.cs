@@ -89,8 +89,9 @@ public partial class RecordingView : Page
         _timer?.Stop();
         _dotTimer?.Stop();
 
-        // Run WAV→MP3 conversion on background thread so UI doesn't freeze
-        await Task.Run(() => _audio.StopRecording());
+        // StopRecording stops capture immediately and starts conversion on a background
+        // thread (AudioSaveTask). ProcessingViewModel awaits that task as its first step.
+        _audio.StopRecording();
 
         _meeting.RecordingEnded = DateTime.Now;
         _meeting.Status = MeetingStatus.Processing;

@@ -12,14 +12,19 @@ public partial class ProcessingViewModel : BaseViewModel
     private readonly OllamaService _ollama;
     private readonly DatabaseService _db;
     private readonly AppSettings _settings;
+    private readonly AudioCaptureService _audio;
 
     [ObservableProperty] private string _statusMessage = "Preparing...";
+    [ObservableProperty] private string _savingAudioStatus = "Waiting";
     [ObservableProperty] private string _transcribingStatus = "Waiting";
     [ObservableProperty] private string _summarizingStatus = "Waiting";
+    [ObservableProperty] private bool _savingAudioActive;
     [ObservableProperty] private bool _transcribingActive;
     [ObservableProperty] private bool _summarizingActive;
+    [ObservableProperty] private bool _savingAudioDone;
     [ObservableProperty] private bool _transcribingDone;
     [ObservableProperty] private bool _summarizingDone;
+    [ObservableProperty] private string _audioFileName = string.Empty;
     [ObservableProperty] private string _liveTranscriptPreview = string.Empty;
 
     public event EventHandler<Meeting>? ProcessingComplete;
@@ -28,12 +33,13 @@ public partial class ProcessingViewModel : BaseViewModel
     public event EventHandler<string>? StatusChanged;
 
     public ProcessingViewModel(TranscriptionService transcription, OllamaService ollama,
-        DatabaseService db, AppSettings settings)
+        DatabaseService db, AppSettings settings, AudioCaptureService audio)
     {
         _transcription = transcription;
         _ollama = ollama;
         _db = db;
         _settings = settings;
+        _audio = audio;
     }
 
     /// <param name="appendTranscript">
@@ -46,6 +52,25 @@ public partial class ProcessingViewModel : BaseViewModel
     {
         try
         {
+            // Step 0: Wait for the background audio save (mix/convert) to finish.
+            // StopRecording() returns immediately and stores the task in AudioSaveTask so
+            // the UI can navigate here right away while the file is still being written.
+            StatusMessage = "Saving audio...";
+            SavingAudioStatus = "In progress";
+            SavingAudioActive = true;
+            AudioFileName = meeting.AudioFilePath is not null
+                ? Path.GetFileName(meeting.AudioFilePath)
+                : string.Empty;
+            StepChanged?.Invoke(this, "saving-audio");
+            StatusChanged?.Invoke(this, "Saving audio...");
+
+            await _audio.AudioSaveTask;
+
+            SavingAudioActive = false;
+            SavingAudioDone = true;
+            SavingAudioStatus = "Done";
+            StepChanged?.Invoke(this, "audio-saved");
+
             // Capture existing summary before anything changes so we can append to it
             string? existingSummary = meeting.Summary;
 
