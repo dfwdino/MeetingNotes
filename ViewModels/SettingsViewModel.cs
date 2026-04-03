@@ -44,6 +44,11 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private bool _appWatcherEnabled;
     [ObservableProperty] private string _watchedApps = string.Empty;
 
+    // Logging
+    [ObservableProperty] private bool _logToDatabase = true;
+    [ObservableProperty] private bool _logToFile;
+    [ObservableProperty] private string _logFolder = string.Empty;
+
     public string[] WhisperModels { get; } = ["Tiny", "Base", "Small", "Medium"];
     public string[] AudioFormats { get; } = ["MP3", "WAV"];
     public int[] Mp3Bitrates { get; } = [32, 64, 128];
@@ -76,6 +81,9 @@ public partial class SettingsViewModel : BaseViewModel
         ShowTrayTimer = s.ShowTrayTimer;
         AppWatcherEnabled = s.AppWatcherEnabled;
         WatchedApps = s.WatchedApps;
+        LogToDatabase = s.LogToDatabase;
+        LogToFile = s.LogToFile;
+        LogFolder = s.LogFolder;
     }
 
     [RelayCommand]
@@ -111,6 +119,18 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    public void BrowseLogFolder()
+    {
+        var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Select log folder",
+            SelectedPath = LogFolder
+        };
+        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            LogFolder = dialog.SelectedPath;
+    }
+
+    [RelayCommand]
     public void BrowseWhisperCacheFolder()
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
@@ -142,6 +162,9 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.ShowTrayTimer = ShowTrayTimer;
         _settings.AppWatcherEnabled = AppWatcherEnabled;
         _settings.WatchedApps = WatchedApps;
+        _settings.LogToDatabase = LogToDatabase;
+        _settings.LogToFile = LogToFile;
+        _settings.LogFolder = LogFolder;
 
         SettingsService.Save(_settings);
         return Task.CompletedTask;

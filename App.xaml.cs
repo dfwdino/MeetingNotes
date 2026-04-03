@@ -279,7 +279,9 @@ public partial class App : System.Windows.Application
         };
 
         // 2. Swap our custom theme ResourceDictionary in App.Resources
-        bool isLight = theme == "Light";
+        // For "System", use the actual resolved theme ModernWPF detected
+        bool isLight = theme == "Light" ||
+            (theme == "System" && ModernWpf.ThemeManager.Current.ActualApplicationTheme == ModernWpf.ApplicationTheme.Light);
         var newThemeUri = new Uri(
             isLight ? "/Themes/LightTheme.xaml" : "/Themes/DarkTheme.xaml",
             UriKind.Relative);

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep -E \"\\\\.cs$|\\\\.xaml$|\\\\.json$\")",
       "Bash(xargs grep:*)",
-      "Bash(grep -r \"Task\\\\|Thread\\\\|Queue\\\\|Background\\\\|Async\" /c/Users/Shane/source/repos/MeetingNotes --include=\"*.cs\" ! -path \"*/obj/*\")"
+      "Bash(grep -r \"Task\\\\|Thread\\\\|Queue\\\\|Background\\\\|Async\" /c/Users/Shane/source/repos/MeetingNotes --include=\"*.cs\" ! -path \"*/obj/*\")",
+      "Bash(git config:*)"
     ]
   }
 }

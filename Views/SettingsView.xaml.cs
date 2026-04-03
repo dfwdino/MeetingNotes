@@ -59,6 +59,10 @@ public partial class SettingsView : Page
 
         AppWatcherEnabledBox.IsChecked = _vm.AppWatcherEnabled;
         WatchedAppsBox.Text = _vm.WatchedApps.Replace(",", "\n");
+
+        LogToDatabaseBox.IsChecked = _vm.LogToDatabase;
+        LogToFileBox.IsChecked = _vm.LogToFile;
+        LogFolderBox.Text = _vm.LogFolder;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -180,6 +184,12 @@ public partial class SettingsView : Page
         RecordingsFolderBox.Text = _vm.RecordingsFolder;
     }
 
+    private void BrowseLogFolder_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.BrowseLogFolderCommand.Execute(null);
+        LogFolderBox.Text = _vm.LogFolder;
+    }
+
     private void BrowseWhisperFolder_Click(object sender, RoutedEventArgs e)
     {
         _vm.BrowseWhisperCacheFolderCommand.Execute(null);
@@ -223,6 +233,9 @@ public partial class SettingsView : Page
         _vm.WatchedApps = string.Join(",",
             WatchedAppsBox.Text.Split('\n',
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        _vm.LogToDatabase = LogToDatabaseBox.IsChecked == true;
+        _vm.LogToFile = LogToFileBox.IsChecked == true;
+        _vm.LogFolder = LogFolderBox.Text;
 
         await _vm.SaveAsync();
         App.ApplyTheme(_vm.Theme);
