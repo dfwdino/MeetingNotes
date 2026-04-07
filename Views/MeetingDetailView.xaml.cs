@@ -104,14 +104,16 @@ public partial class MeetingDetailView : Page
     {
         if (_meetingVm is null) return;
         var mainWindow = Window.GetWindow(this) as MainWindow;
-        mainWindow?.ShowRecordingView(_meetingVm);
+        bool runAI = ReprocessRunAICheckBox.IsChecked == true;
+        mainWindow?.ShowRecordingView(_meetingVm, runAI);
     }
 
     private void ReprocessButton_Click(object sender, RoutedEventArgs e)
     {
         if (_meetingVm is null) return;
         var mainWindow = Window.GetWindow(this) as MainWindow;
-        mainWindow?.ShowProcessingView(_meetingVm);
+        bool runAI = ReprocessRunAICheckBox.IsChecked == true;
+        mainWindow?.ShowProcessingView(_meetingVm, runAI: runAI);
     }
 
     private async void ExportButton_Click(object sender, RoutedEventArgs e)

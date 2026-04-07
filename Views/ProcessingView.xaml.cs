@@ -20,10 +20,12 @@ public partial class ProcessingView : Page
     private MeetingNotes.Models.Meeting? _currentMeeting;
 
     private bool _appendTranscript;
+    private bool _runAI = true;
 
-    public async void StartProcessing(int meetingId, bool appendTranscript = false)
+    public async void StartProcessing(int meetingId, bool appendTranscript = false, bool runAI = true)
     {
         _appendTranscript = appendTranscript;
+        _runAI = runAI;
 
         var db = App.GetService<DatabaseService>();
         _currentMeeting = await db.GetMeetingAsync(meetingId);
@@ -38,7 +40,7 @@ public partial class ProcessingView : Page
         _vm.ErrorOccurred         += (_, err) => Dispatcher.Invoke(() => ShowError(err.message));
         _vm.WhisperSetupRequired  += (_, m)   => Dispatcher.Invoke(() => HandleWhisperSetup(m));
 
-        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript);
+        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI);
     }
 
     private void ShowError(string message)

@@ -48,7 +48,7 @@ public partial class ProcessingViewModel : BaseViewModel
     /// transcription is skipped if a transcript already exists.
     /// </param>
     public async Task ProcessMeetingAsync(Meeting meeting, bool appendTranscript = false,
-        CancellationToken cancellationToken = default)
+        bool runAI = true, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -131,6 +131,20 @@ public partial class ProcessingViewModel : BaseViewModel
             TranscribingDone = true;
             TranscribingStatus = "Done";
             StepChanged?.Invoke(this, "transcribed");
+
+            // Step 2: Summarize (skip if the user unchecked "Run AI processing")
+            if (!runAI)
+            {
+                SummarizingDone = true;
+                SummarizingStatus = "Skipped";
+                StepChanged?.Invoke(this, "summarized");
+                meeting.Status = MeetingStatus.Ready;
+                await _db.UpdateMeetingAsync(meeting);
+                StatusMessage = "Complete!";
+                StatusChanged?.Invoke(this, "Complete! (AI processing skipped)");
+                ProcessingComplete?.Invoke(this, meeting);
+                return;
+            }
 
             // Step 2: Summarize
             // In append mode: summarize only the new portion, then append to the existing

@@ -18,6 +18,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TitleBox"
                          Background="Transparent" BorderThickness="0"
@@ -46,10 +47,15 @@
                         </Style>
                     </TextBox.Style>
                 </TextBox>
-                <TextBlock Grid.Column="1" x:Name="MetaText"
+                <CheckBox Grid.Column="1" x:Name="ReprocessRunAICheckBox"
+                          Content="Run AI" IsChecked="True"
+                          VerticalAlignment="Center" Margin="12,0"
+                          Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                          ToolTip="When checked, AI summarization will run after recording or re-processing"/>
+                <TextBlock Grid.Column="2" x:Name="MetaText"
                            Foreground="#FF666666" FontSize="12"
-                           VerticalAlignment="Center" Margin="16,0"/>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
                     <Button x:Name="ReprocessButton"
                             Content="↺  Re-process"
                             Style="{DynamicResource GhostButton}"

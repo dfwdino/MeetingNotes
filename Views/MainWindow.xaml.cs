@@ -349,17 +349,17 @@ public partial class MainWindow : Window
         ContentFrame.Navigate(page);
     }
 
-    public void ShowRecordingView(MeetingViewModel meeting)
+    public void ShowRecordingView(MeetingViewModel meeting, bool runAI = true)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
         var page = App.GetService<RecordingView>();
-        page.SetMeeting(meeting, _vm.SelectedFolder?.Name ?? string.Empty);
+        page.SetMeeting(meeting, _vm.SelectedFolder?.Name ?? string.Empty, runAI);
         page.RecordingStopped += OnRecordingStopped;
         ContentFrame.Navigate(page);
     }
 
-    public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false)
+    public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false, bool runAI = true)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
@@ -371,17 +371,17 @@ public partial class MainWindow : Window
             var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meeting.Id);
             if (vm is not null) ShowMeetingDetail(vm);
         };
-        page.StartProcessing(meetingVm.Id, appendTranscript);
+        page.StartProcessing(meetingVm.Id, appendTranscript, runAI);
         ContentFrame.Navigate(page);
     }
 
-    private void OnRecordingStopped(object? sender, int meetingId)
+    private void OnRecordingStopped(object? sender, (int meetingId, bool runAI) args)
     {
-        var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meetingId);
+        var vm = _vm.Meetings.FirstOrDefault(m => m.Id == args.meetingId);
         if (vm is null) return;
         // If the meeting already had a transcript, this is a re-recording → append
         bool append = !string.IsNullOrWhiteSpace(vm.Transcript);
-        ShowProcessingView(vm, append);
+        ShowProcessingView(vm, append, args.runAI);
     }
 
     private void CollapseListButton_Click(object sender, RoutedEventArgs e)
