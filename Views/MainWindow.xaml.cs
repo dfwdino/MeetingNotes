@@ -11,6 +11,8 @@ public partial class MainWindow : Window
     private bool _sidebarCollapsed;
     private bool _searchVisible;
     private string _folderNameBeforeEdit = string.Empty;
+    // One FolderChatView per folder — preserves chat history when clicking away and back
+    private readonly Dictionary<int, FolderChatView> _folderChatCache = [];
 
     public MainWindow(MainViewModel vm)
     {
@@ -57,7 +59,7 @@ public partial class MainWindow : Window
             MeetingList.ItemsSource = _vm.Meetings;
             NewMeetingButton.Visibility = Visibility.Visible;
             UpdateFolderTitle();
-            ShowEmptyState();
+            ShowFolderChat(folder);
         }
     }
 
@@ -135,7 +137,8 @@ public partial class MainWindow : Window
             MeetingList.ItemsSource = _vm.Meetings;
             NewMeetingButton.Visibility = Visibility.Visible; // new folder auto-selects
             UpdateFolderTitle();
-            ShowEmptyState(); // show empty content area for the newly created (empty) folder
+            if (_vm.SelectedFolder is not null)
+                ShowFolderChat(_vm.SelectedFolder);
         }
     }
 
@@ -177,6 +180,7 @@ public partial class MainWindow : Window
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
+                _folderChatCache.Remove(folder.Id); // drop cached chat for deleted folder
                 await _vm.DeleteFolderAsync(folder);
                 FolderList.ItemsSource = _vm.Folders;
                 MeetingList.ItemsSource = _vm.Meetings;
@@ -338,6 +342,22 @@ public partial class MainWindow : Window
         menu.PlacementTarget = btn;
         menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
         menu.IsOpen = true;
+    }
+
+    private void ShowFolderChat(FolderViewModel folder)
+    {
+        EmptyState.Visibility = Visibility.Collapsed;
+        ContentFrame.Visibility = Visibility.Visible;
+
+        // Reuse existing instance so chat history is preserved when clicking away and back
+        if (!_folderChatCache.TryGetValue(folder.Id, out var page))
+        {
+            page = App.GetService<FolderChatView>();
+            page.SetFolder(folder);
+            _folderChatCache[folder.Id] = page;
+        }
+
+        ContentFrame.Navigate(page);
     }
 
     private void ShowMeetingDetail(MeetingViewModel meeting)

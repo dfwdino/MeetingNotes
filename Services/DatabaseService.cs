@@ -21,6 +21,23 @@ public class DatabaseService
         _ = _logger.InfoAsync("Initializing database...");
         await using var db = await _dbFactory.CreateDbContextAsync();
         await db.Database.EnsureCreatedAsync();
+
+        // Create FolderChatMessages table for existing installs that predate this feature
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FolderChatMessages')
+                CREATE TABLE FolderChatMessages (
+                    Id        INT IDENTITY(1,1) PRIMARY KEY,
+                    FolderId  INT NOT NULL,
+                    Role      NVARCHAR(50) NOT NULL,
+                    Content   NVARCHAR(MAX) NOT NULL,
+                    Timestamp DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    CONSTRAINT FK_FolderChatMessages_Folders
+                        FOREIGN KEY (FolderId) REFERENCES Folders(Id) ON DELETE CASCADE
+                )");
+        }
+        catch { /* table already exists or DB not yet ready — EnsureCreated covers fresh installs */ }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────
@@ -198,6 +215,36 @@ public class DatabaseService
         db.ChatMessages.Add(msg);
         await db.SaveChangesAsync();
         return msg;
+    }
+
+    // ── Folder Chat ───────────────────────────────────────────────────────
+    public async Task<List<FolderChatMessage>> GetFolderChatMessagesAsync(int folderId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.FolderChatMessages
+            .Where(c => c.FolderId == folderId)
+            .OrderBy(c => c.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task AddFolderChatMessageAsync(int folderId, ChatRole role, string content)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        db.FolderChatMessages.Add(new FolderChatMessage
+        {
+            FolderId = folderId, Role = role, Content = content
+        });
+        await db.SaveChangesAsync();
+    }
+
+    public async Task ClearFolderChatAsync(int folderId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var msgs = await db.FolderChatMessages
+            .Where(c => c.FolderId == folderId)
+            .ToListAsync();
+        db.FolderChatMessages.RemoveRange(msgs);
+        await db.SaveChangesAsync();
     }
 
     // ── Settings ─────────────────────────────────────────────────────────

@@ -93,6 +93,46 @@ public class OllamaService
         return response.ToString();
     }
 
+    public async IAsyncEnumerable<string> FolderChatAsync(
+        string folderName,
+        string combinedTranscripts,
+        IEnumerable<(string role, string content)> history,
+        string userMessage,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var client = GetClient();
+
+        var messages = new List<OllamaMessage>
+        {
+            new OllamaMessage { Role = ChatRole.System, Content =
+                $"You are a helpful assistant with access to all meeting transcripts in the \"{folderName}\" folder. " +
+                "Answer questions using information from any of these meetings. " +
+                "When relevant, mention which meeting the information came from by its title and date. " +
+                "Be specific and reference timestamps when helpful.\n\n" +
+                combinedTranscripts }
+        };
+
+        foreach (var (role, content) in history)
+            messages.Add(new OllamaMessage
+            {
+                Role = role == "user" ? ChatRole.User : ChatRole.Assistant,
+                Content = content
+            });
+
+        messages.Add(new OllamaMessage { Role = ChatRole.User, Content = userMessage });
+
+        await foreach (var chunk in client.ChatAsync(new OllamaSharp.Models.Chat.ChatRequest
+        {
+            Model = _model,
+            Messages = messages,
+            Stream = true
+        }, cancellationToken))
+        {
+            if (chunk?.Message?.Content is not null)
+                yield return chunk.Message.Content;
+        }
+    }
+
     public async IAsyncEnumerable<string> ChatAsync(string transcript,
         IEnumerable<(string role, string content)> history,
         string userMessage,
