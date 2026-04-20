@@ -18,7 +18,7 @@ namespace MeetingNotes.Views;
 public partial class MeetingDetailView : Page
 {
     private readonly DatabaseService _db;
-    private readonly OllamaService _ollama;
+    private readonly ILlmService _llm;
     private readonly AppSettings _settings;
     private MeetingViewModel? _meetingVm;
     //private string _ActiveTab = "MyNotes";
@@ -26,11 +26,11 @@ public partial class MeetingDetailView : Page
     private bool _suppressNoteChange;
     private System.Windows.Threading.DispatcherTimer? _saveTimer;
 
-    public MeetingDetailView(DatabaseService db, OllamaService ollama, AppSettings settings)
+    public MeetingDetailView(DatabaseService db, ILlmService llm, AppSettings settings)
     {
         InitializeComponent();
         _db = db;
-        _ollama = ollama;
+        _llm = llm;
         _settings = settings;
         SetupSaveTimer();
     }
@@ -318,9 +318,7 @@ public partial class MeetingDetailView : Page
         var responseText = string.Empty;
         var responseBubble = AddChatBubble("AI", "...", isUser: false);
 
-        _ollama.Configure(_settings.OllamaServerUrl, _settings.OllamaDefaultModel);
-
-        await foreach (var chunk in _ollama.ChatAsync(
+        await foreach (var chunk in _llm.ChatAsync(
             _meetingVm.Transcript ?? string.Empty, history, userMessage))
         {
             responseText += chunk;

@@ -11,9 +11,17 @@ public class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "whisper.net");
     public int TranscriptionChunkSeconds { get; set; } = 60;
 
+    // AI Provider
+    public string LlmProvider { get; set; } = "Ollama"; // "Ollama" or "LmStudio"
+
     // Ollama
     public string OllamaServerUrl { get; set; } = "http://localhost:11434";
     public string OllamaDefaultModel { get; set; } = "llama3.2:3b";
+    // LM Studio
+    public string LmStudioServerUrl { get; set; } = "http://localhost:1234";
+    public string LmStudioDefaultModel { get; set; } = string.Empty;
+    public string LmStudioApiKey { get; set; } = string.Empty;
+
     public string SummaryPrompt { get; set; } =
         "You are a meeting assistant. Based on the following transcript, provide:\n" +
         "1. A brief overview (2-3 sentences)\n" +

@@ -39,10 +39,6 @@ public partial class App : System.Windows.Application
         var db = GetService<DatabaseService>();
         await db.InitializeAsync();
 
-        // Configure Ollama with saved settings
-        var ollama = GetService<OllamaService>();
-        ollama.Configure(settings.OllamaServerUrl, settings.OllamaDefaultModel);
-
         // Verify the Whisper model exists AND loads correctly every startup.
         // A file that exists but is corrupt/truncated will crash later — catch it here.
         if (!await EnsureWhisperReadyAsync(settings))
@@ -187,7 +183,9 @@ public partial class App : System.Windows.Application
         services.AddSingleton<DatabaseService>();
         services.AddSingleton<AudioCaptureService>();
         services.AddSingleton<TranscriptionService>();
-        services.AddSingleton<OllamaService>();
+        services.AddSingleton<LocalLlmService>();
+        services.AddSingleton<LlmServiceRouter>();
+        services.AddSingleton<ILlmService>(sp => sp.GetRequiredService<LlmServiceRouter>());
         services.AddSingleton<AppSettings>();
         services.AddSingleton<ActiveWindowMonitor>();
 

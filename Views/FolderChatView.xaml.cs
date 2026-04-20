@@ -15,18 +15,18 @@ namespace MeetingNotes.Views;
 public partial class FolderChatView : Page
 {
     private readonly DatabaseService _db;
-    private readonly OllamaService _ollama;
+    private readonly ILlmService _llm;
     private readonly AppSettings _settings;
 
     private FolderViewModel? _folder;
     // In-memory history for Ollama context — rebuilt from DB on each SetFolder call
     private readonly List<(string role, string content)> _history = [];
 
-    public FolderChatView(DatabaseService db, OllamaService ollama, AppSettings settings)
+    public FolderChatView(DatabaseService db, ILlmService llm, AppSettings settings)
     {
         InitializeComponent();
         _db = db;
-        _ollama = ollama;
+        _llm = llm;
         _settings = settings;
     }
 
@@ -127,11 +127,9 @@ public partial class FolderChatView : Page
         var responseText = string.Empty;
         var responseBubble = AddBubble("AI", "…", isUser: false);
 
-        _ollama.Configure(_settings.OllamaServerUrl, _settings.OllamaDefaultModel);
-
         try
         {
-            await foreach (var chunk in _ollama.FolderChatAsync(
+            await foreach (var chunk in _llm.FolderChatAsync(
                 _folder.Name, combinedContext, _history, userMessage))
             {
                 responseText += chunk;

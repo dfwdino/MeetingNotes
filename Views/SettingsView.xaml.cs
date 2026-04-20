@@ -29,11 +29,23 @@ public partial class SettingsView : Page
             30 => 0, 120 => 2, _ => 1
         };
 
+        ProviderBox.ItemsSource = _vm.LlmProviders;
+        ProviderBox.SelectedItem = _vm.LlmProvider == "LmStudio" ? "LM Studio" : "Ollama";
+        ApplyProviderVisibility(_vm.LlmProvider);
+
         OllamaUrlBox.Text = _vm.OllamaServerUrl;
         OllamaModelBox.ItemsSource = _vm.AvailableModels.Count > 0
             ? _vm.AvailableModels : new[] { _vm.OllamaDefaultModel };
         OllamaModelBox.SelectedItem = _vm.OllamaDefaultModel;
         UpdateDefaultModelDisplay();
+
+        LmStudioUrlBox.Text = _vm.LmStudioServerUrl;
+        LmStudioApiKeyBox.Text = _vm.LmStudioApiKey;
+        LmStudioModelBox.ItemsSource = _vm.LmStudioAvailableModels.Count > 0
+            ? (System.Collections.IEnumerable)_vm.LmStudioAvailableModels
+            : new[] { _vm.LmStudioDefaultModel };
+        LmStudioModelBox.SelectedItem = _vm.LmStudioDefaultModel;
+        UpdateLmStudioDefaultModelDisplay();
 
         SummaryPromptBox.Text = _vm.SummaryPrompt;
         WhisperFolderBox.Text = _vm.WhisperCacheFolder;
@@ -67,9 +79,26 @@ public partial class SettingsView : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        // Silently try to discover models on open — no error shown if Ollama isn't running
-        await FetchOllamaModelsAsync(showStatus: false);
+        if (_vm.LlmProvider == "LmStudio")
+            await FetchLmStudioModelsAsync(showStatus: false);
+        else
+            await FetchOllamaModelsAsync(showStatus: false);
     }
+
+    private void ProviderBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var selected = ProviderBox.SelectedItem?.ToString();
+        ApplyProviderVisibility(selected == "LM Studio" ? "LmStudio" : "Ollama");
+    }
+
+    private void ApplyProviderVisibility(string provider)
+    {
+        if (OllamaPanel is null || LmStudioPanel is null) return;
+        OllamaPanel.Visibility = provider == "LmStudio" ? Visibility.Collapsed : Visibility.Visible;
+        LmStudioPanel.Visibility = provider == "LmStudio" ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ── Ollama ────────────────────────────────────────────────────────
 
     private async void TestOllama_Click(object sender, RoutedEventArgs e)
     {
@@ -83,8 +112,7 @@ public partial class SettingsView : Page
         if (showStatus)
         {
             OllamaStatusText.Text = "Connecting...";
-            OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(136, 136, 136));
+            OllamaStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(136, 136, 136));
         }
 
         await _vm.TestOllamaConnectionAsync();
@@ -92,10 +120,10 @@ public partial class SettingsView : Page
         if (showStatus)
         {
             OllamaStatusText.Text = _vm.OllamaStatus;
-            OllamaStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+            OllamaStatusText.Foreground = new SolidColorBrush(
                 _vm.OllamaConnected
-                    ? System.Windows.Media.Color.FromRgb(76, 175, 80)
-                    : System.Windows.Media.Color.FromRgb(196, 43, 28));
+                    ? WpfColor.FromRgb(76, 175, 80)
+                    : WpfColor.FromRgb(196, 43, 28));
         }
 
         if (_vm.OllamaConnected)
@@ -137,7 +165,6 @@ public partial class SettingsView : Page
             return;
         }
 
-        // Validate: model must be in the known installed list
         if (_vm.AvailableModels.Count > 0 && !_vm.AvailableModels.Contains(selected))
         {
             WpfMsgBox.Show($"\"{selected}\" is not in your installed Ollama models.\n\n" +
@@ -159,7 +186,6 @@ public partial class SettingsView : Page
 
         if (!modelsKnown)
         {
-            // Haven't connected yet — show neutral state
             DefaultModelStatus.Text = "(connect to verify)";
             DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(136, 136, 136));
             DefaultModelWarning.Visibility = Visibility.Collapsed;
@@ -177,6 +203,85 @@ public partial class SettingsView : Page
             DefaultModelWarning.Visibility = Visibility.Visible;
         }
     }
+
+    // ── LM Studio ─────────────────────────────────────────────────────
+
+    private async void TestLmStudio_Click(object sender, RoutedEventArgs e)
+    {
+        await FetchLmStudioModelsAsync(showStatus: true);
+    }
+
+    private async Task FetchLmStudioModelsAsync(bool showStatus)
+    {
+        _vm.LmStudioServerUrl = LmStudioUrlBox.Text;
+        _vm.LmStudioApiKey = LmStudioApiKeyBox.Text;
+
+        if (showStatus)
+        {
+            LmStudioStatusText.Text = "Connecting...";
+            LmStudioStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(136, 136, 136));
+        }
+
+        await _vm.TestLmStudioConnectionAsync();
+
+        if (showStatus)
+        {
+            LmStudioStatusText.Text = _vm.LmStudioStatus;
+            LmStudioStatusText.Foreground = new SolidColorBrush(
+                _vm.LmStudioConnected
+                    ? WpfColor.FromRgb(76, 175, 80)
+                    : WpfColor.FromRgb(196, 43, 28));
+        }
+
+        if (_vm.LmStudioConnected)
+        {
+            LmStudioModelBox.ItemsSource = _vm.LmStudioAvailableModels;
+            LmStudioModelBox.SelectedItem = _vm.LmStudioDefaultModel;
+            LmStudioModelsPanel.Visibility = Visibility.Visible;
+        }
+
+        UpdateLmStudioDefaultModelDisplay();
+    }
+
+    private void SetLmStudioDefaultModel_Click(object sender, RoutedEventArgs e)
+    {
+        if (LmStudioModelBox.SelectedItem is not string selected)
+        {
+            WpfMsgBox.Show("Please select a model from the Available Models list first.",
+                "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _vm.LmStudioDefaultModel = selected;
+        UpdateLmStudioDefaultModelDisplay();
+    }
+
+    private void UpdateLmStudioDefaultModelDisplay()
+    {
+        LmStudioDefaultModelLabel.Text = string.IsNullOrWhiteSpace(_vm.LmStudioDefaultModel)
+            ? "(none selected)" : _vm.LmStudioDefaultModel;
+
+        bool hasModel = !string.IsNullOrWhiteSpace(_vm.LmStudioDefaultModel);
+        bool modelsKnown = _vm.LmStudioAvailableModels.Count > 0;
+
+        if (!hasModel)
+        {
+            LmStudioDefaultModelStatus.Text = "(connect to select)";
+            LmStudioDefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(136, 136, 136));
+        }
+        else if (!modelsKnown || _vm.LmStudioAvailableModels.Contains(_vm.LmStudioDefaultModel))
+        {
+            LmStudioDefaultModelStatus.Text = hasModel ? "✓ Selected" : string.Empty;
+            LmStudioDefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+        }
+        else
+        {
+            LmStudioDefaultModelStatus.Text = "⚠ Not found";
+            LmStudioDefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(239, 83, 80));
+        }
+    }
+
+    // ── Browse / folder ───────────────────────────────────────────────
 
     private void BrowseRecordingsFolder_Click(object sender, RoutedEventArgs e)
     {
@@ -198,7 +303,6 @@ public partial class SettingsView : Page
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
-        // Reload original values — discard any unsaved edits
         LoadControls();
 
         if (NavigationService?.CanGoBack == true)
@@ -215,9 +319,16 @@ public partial class SettingsView : Page
         {
             0 => 30, 2 => 120, _ => 60
         };
+
+        var selectedProvider = ProviderBox.SelectedItem?.ToString();
+        _vm.LlmProvider = selectedProvider == "LM Studio" ? "LmStudio" : "Ollama";
+
         _vm.OllamaServerUrl = OllamaUrlBox.Text;
-        // OllamaDefaultModel is set explicitly via Set as Default — don't override on save
         _vm.SummaryPrompt = SummaryPromptBox.Text;
+
+        _vm.LmStudioServerUrl = LmStudioUrlBox.Text;
+        _vm.LmStudioApiKey = LmStudioApiKeyBox.Text;
+
         _vm.AudioFormat = AudioFormatBox.SelectedItem?.ToString() ?? "MP3";
         _vm.Mp3Bitrate = Mp3BitrateBox.SelectedIndex switch
         {

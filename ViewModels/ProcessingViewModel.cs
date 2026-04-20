@@ -9,7 +9,7 @@ namespace MeetingNotes.ViewModels;
 public partial class ProcessingViewModel : BaseViewModel
 {
     private readonly TranscriptionService _transcription;
-    private readonly OllamaService _ollama;
+    private readonly ILlmService _llm;
     private readonly DatabaseService _db;
     private readonly AppSettings _settings;
     private readonly AudioCaptureService _audio;
@@ -32,11 +32,11 @@ public partial class ProcessingViewModel : BaseViewModel
     public event EventHandler<string>? StepChanged;
     public event EventHandler<string>? StatusChanged;
 
-    public ProcessingViewModel(TranscriptionService transcription, OllamaService ollama,
+    public ProcessingViewModel(TranscriptionService transcription, ILlmService llm,
         DatabaseService db, AppSettings settings, AudioCaptureService audio)
     {
         _transcription = transcription;
-        _ollama = ollama;
+        _llm = llm;
         _db = db;
         _settings = settings;
         _audio = audio;
@@ -150,12 +150,13 @@ public partial class ProcessingViewModel : BaseViewModel
             // In append mode: summarize only the new portion, then append to the existing
             // summary so the original is never lost.
             // In normal mode: summarize the full transcript (first run or explicit re-process).
-            StatusMessage = "Checking Ollama...";
+            var providerName = _settings.LlmProvider == "LmStudio" ? "LM Studio" : "Ollama";
+            StatusMessage = $"Checking {providerName}...";
             SummarizingActive = true;
             StepChanged?.Invoke(this, "summarizing");
 
-            string? ollamaWarning = await CheckOllamaAsync();
-            if (ollamaWarning != null)
+            string? llmWarning = await CheckLlmAsync();
+            if (llmWarning != null)
             {
                 SummarizingActive = false;
                 SummarizingDone = true;
@@ -163,11 +164,11 @@ public partial class ProcessingViewModel : BaseViewModel
                 meeting.Status = MeetingStatus.Ready;
                 await _db.UpdateMeetingAsync(meeting);
                 ProcessingComplete?.Invoke(this, meeting);
-                StatusChanged?.Invoke(this, ollamaWarning);
+                StatusChanged?.Invoke(this, llmWarning);
                 return;
             }
 
-            StatusMessage = "Generating summary with Ollama...";
+            StatusMessage = $"Generating summary with {providerName}...";
             SummarizingStatus = "In progress";
             StatusChanged?.Invoke(this, "Generating summary...");
 
@@ -175,7 +176,7 @@ public partial class ProcessingViewModel : BaseViewModel
                 ? newPortionText!
                 : meeting.Transcript!;
 
-            var summary = await _ollama.GenerateSummaryAsync(
+            var summary = await _llm.GenerateSummaryAsync(
                 textToSummarize, _settings.SummaryPrompt,
                 new Progress<string>(chunk =>
                     App.Current.Dispatcher.Invoke(() => StatusMessage = "Summarizing...")),
@@ -219,7 +220,7 @@ public partial class ProcessingViewModel : BaseViewModel
                 await _db.UpdateMeetingAsync(meeting);
 
             var message = ex is TaskCanceledException
-                ? "Ollama timed out. The meeting may be too long for the current model. Try a faster model in Settings, then retry."
+                ? "The AI timed out. The meeting may be too long for the current model. Try a faster model in Settings, then retry."
                 : $"Processing failed: {ex.Message}";
 
             StatusChanged?.Invoke(this, message);
@@ -230,27 +231,28 @@ public partial class ProcessingViewModel : BaseViewModel
     public event EventHandler<(string message, Meeting meeting)>? ErrorOccurred;
     public event EventHandler<Meeting>? WhisperSetupRequired;
 
-    /// <summary>
-    /// Returns a human-readable warning string if Ollama is not usable, or null if it's fine.
-    /// </summary>
-    private async Task<string?> CheckOllamaAsync()
+    private async Task<string?> CheckLlmAsync()
     {
-        if (string.IsNullOrWhiteSpace(_settings.OllamaServerUrl))
-            return "⚠ No Ollama server URL is configured. Transcription is saved — open Settings to set up Ollama and use Retry to get a summary.";
+        bool isLmStudio = _settings.LlmProvider == "LmStudio";
+        string serverUrl = isLmStudio ? _settings.LmStudioServerUrl : _settings.OllamaServerUrl;
+        string model = isLmStudio ? _settings.LmStudioDefaultModel : _settings.OllamaDefaultModel;
+        string provider = isLmStudio ? "LM Studio" : "Ollama";
 
-        if (string.IsNullOrWhiteSpace(_settings.OllamaDefaultModel))
-            return "⚠ No Ollama model is selected. Transcription is saved — open Settings to choose a model and use Retry to get a summary.";
+        if (string.IsNullOrWhiteSpace(serverUrl))
+            return $"⚠ No {provider} server URL is configured. Transcription is saved — open Settings to set up {provider} and use Retry to get a summary.";
+
+        if (string.IsNullOrWhiteSpace(model))
+            return $"⚠ No {provider} model is selected. Transcription is saved — open Settings to choose a model and use Retry to get a summary.";
 
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var reachable = await _ollama.IsAvailableAsync();
+            var reachable = await _llm.IsAvailableAsync();
             if (!reachable)
-                return $"⚠ Ollama is not running at {_settings.OllamaServerUrl}. Transcription is saved — start Ollama and use Retry to generate a summary.";
+                return $"⚠ {provider} is not running at {serverUrl}. Transcription is saved — start {provider} and use Retry to generate a summary.";
         }
         catch
         {
-            return $"⚠ Could not reach Ollama at {_settings.OllamaServerUrl}. Transcription is saved — start Ollama and use Retry to generate a summary.";
+            return $"⚠ Could not reach {provider} at {serverUrl}. Transcription is saved — start {provider} and use Retry to generate a summary.";
         }
 
         return null;

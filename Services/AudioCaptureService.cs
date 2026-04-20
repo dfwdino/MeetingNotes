@@ -12,12 +12,6 @@ public class AudioCaptureService : IDisposable
     private WaveFileWriter?        _wavWriter;     // system audio
     private WaveFileWriter?        _micWavWriter;  // mic audio (separate file)
 
-    // One-shot loopback alignment: WASAPI only fires DataAvailable when audio is playing.
-    // If recording starts during silence, the loopback file would begin at the wrong time.
-    // We record exactly when the first data arrives and prepend that much silence once,
-    // so both the loopback and mic files are always anchored to the same t=0.
-    private bool     _loopbackPadded;
-    private DateTime _captureStartTime;
 
     // Waveform level: both sources update the peak; a fixed-rate timer fires
     // AudioLevelChanged at a steady 20 fps so the waveform scrolls consistently.
@@ -78,8 +72,6 @@ public class AudioCaptureService : IDisposable
 
         _micMuted      = false;
         _loopbackMuted = false;
-        _loopbackPadded    = false;
-        _captureStartTime  = DateTime.UtcNow;
 
         _systemCapture.DataAvailable += OnSystemAudioAvailable;
         _systemCapture.StartRecording();
@@ -180,20 +172,6 @@ public class AudioCaptureService : IDisposable
         if (e.BytesRecorded == 0) return;
         lock (_writerLock)
         {
-            if (!_loopbackPadded)
-            {
-                _loopbackPadded = true;
-                var delay = DateTime.UtcNow - _captureStartTime;
-                if (delay.TotalMilliseconds > 80 && _wavWriter is not null)
-                {
-                    var wf    = _wavWriter.WaveFormat;
-                    var bytes = (int)(wf.AverageBytesPerSecond * delay.TotalSeconds);
-                    bytes     = (bytes / wf.BlockAlign) * wf.BlockAlign;
-                    if (bytes > 0)
-                        _wavWriter.Write(new byte[bytes], 0, bytes);
-                }
-            }
-
             if (_loopbackMuted)
                 _wavWriter?.Write(new byte[e.BytesRecorded], 0, e.BytesRecorded);
             else
@@ -266,8 +244,6 @@ public class AudioCaptureService : IDisposable
             _micTempPath      = newMicTempPath;
             _wavWriter        = newWavWriter;
             _micWavWriter     = newMicWavWriter;
-            _loopbackPadded   = false;
-            _captureStartTime = DateTime.UtcNow;
         }
 
         // Flush and dispose old writers — callbacks no longer reference them
@@ -337,6 +313,26 @@ public class AudioCaptureService : IDisposable
             if (micProvider.WaveFormat.Channels == 1)
                 micProvider = new MonoToStereoSampleProvider(micProvider);
             micProvider = new VolumeSampleProvider(micProvider) { Volume = MicVolume };
+
+            // Align the two streams: compare actual file durations and prepend silence
+            // to whichever started later. More reliable than the old runtime heuristic
+            // which could be tricked by brief Windows audio events at startup.
+            var sysDuration = sysReader.TotalTime;
+            var micDuration = micReader.TotalTime;
+            var diff = micDuration - sysDuration;
+
+            if (diff > TimeSpan.FromMilliseconds(80))
+            {
+                // Mic is longer → system audio started late; pad system with leading silence
+                sysProvider = new ConcatenatingSampleProvider(
+                    [new LeadingSilence(sysProvider.WaveFormat, diff), sysProvider]);
+            }
+            else if (diff < TimeSpan.FromMilliseconds(-80))
+            {
+                // System audio is longer → mic started late; pad mic with leading silence
+                micProvider = new ConcatenatingSampleProvider(
+                    [new LeadingSilence(micProvider.WaveFormat, -diff), micProvider]);
+            }
 
             var mixer = new MixingSampleProvider(sysProvider.WaveFormat) { ReadFully = false };
             mixer.AddMixerInput(sysProvider);
@@ -429,5 +425,25 @@ public class AudioCaptureService : IDisposable
     public void Dispose()
     {
         if (_isRecording) StopRecording();
+    }
+
+    // Produces a fixed duration of float silence — safe for any WaveFormat.
+    private sealed class LeadingSilence : ISampleProvider
+    {
+        public WaveFormat WaveFormat { get; }
+        private int _remaining;
+
+        public LeadingSilence(WaveFormat format, TimeSpan duration)
+        {
+            WaveFormat = format;
+            _remaining = (int)(duration.TotalSeconds * format.SampleRate) * format.Channels;
+        }
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            var take = Math.Min(count, _remaining);
+            if (take > 0) { Array.Clear(buffer, offset, take); _remaining -= take; }
+            return take;
+        }
     }
 }

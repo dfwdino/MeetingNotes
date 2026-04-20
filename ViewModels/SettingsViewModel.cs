@@ -9,13 +9,16 @@ namespace MeetingNotes.ViewModels;
 
 public partial class SettingsViewModel : BaseViewModel
 {
-    private readonly OllamaService _ollama;
+    private readonly LocalLlmService _llm;
     private AppSettings _settings;
 
     // Whisper
     [ObservableProperty] private string _whisperModel = "Base";
     [ObservableProperty] private string _whisperCacheFolder = string.Empty;
     [ObservableProperty] private int _transcriptionChunkSeconds = 60;
+
+    // Provider
+    [ObservableProperty] private string _llmProvider = "Ollama";
 
     // Ollama
     [ObservableProperty] private string _ollamaServerUrl = "http://localhost:11434";
@@ -24,6 +27,14 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private ObservableCollection<string> _availableModels = [];
     [ObservableProperty] private string _ollamaStatus = "Not checked";
     [ObservableProperty] private bool _ollamaConnected;
+
+    // LM Studio
+    [ObservableProperty] private string _lmStudioServerUrl = "http://localhost:1234";
+    [ObservableProperty] private string _lmStudioDefaultModel = string.Empty;
+    [ObservableProperty] private string _lmStudioApiKey = string.Empty;
+    [ObservableProperty] private ObservableCollection<string> _lmStudioAvailableModels = [];
+    [ObservableProperty] private string _lmStudioStatus = "Not checked";
+    [ObservableProperty] private bool _lmStudioConnected;
 
     // Recording
     [ObservableProperty] private string _audioFormat = "MP3";
@@ -54,10 +65,11 @@ public partial class SettingsViewModel : BaseViewModel
     public int[] Mp3Bitrates { get; } = [32, 64, 128];
     public int[] ChunkIntervals { get; } = [30, 60, 120];
     public string[] Themes { get; } = ["Dark", "Light", "System"];
+    public string[] LlmProviders { get; } = ["Ollama", "LM Studio"];
 
-    public SettingsViewModel(OllamaService ollama, AppSettings settings)
+    public SettingsViewModel(LocalLlmService llm, AppSettings settings)
     {
-        _ollama = ollama;
+        _llm = llm;
         _settings = settings;
         LoadFromSettings(settings);
     }
@@ -67,9 +79,13 @@ public partial class SettingsViewModel : BaseViewModel
         WhisperModel = s.WhisperModel;
         WhisperCacheFolder = s.WhisperCacheFolder;
         TranscriptionChunkSeconds = s.TranscriptionChunkSeconds;
+        LlmProvider = s.LlmProvider;
         OllamaServerUrl = s.OllamaServerUrl;
         OllamaDefaultModel = s.OllamaDefaultModel;
         SummaryPrompt = s.SummaryPrompt;
+        LmStudioServerUrl = s.LmStudioServerUrl;
+        LmStudioDefaultModel = s.LmStudioDefaultModel;
+        LmStudioApiKey = s.LmStudioApiKey;
         AudioFormat = s.AudioFormat;
         Mp3Bitrate = s.Mp3Bitrate;
         DeleteAudioAfterTranscription = s.DeleteAudioAfterTranscription;
@@ -91,8 +107,8 @@ public partial class SettingsViewModel : BaseViewModel
     {
         OllamaStatus = "Connecting...";
         OllamaConnected = false;
-        _ollama.Configure(OllamaServerUrl, OllamaDefaultModel);
-        var models = await _ollama.GetAvailableModelsAsync();
+        _llm.Configure(OllamaServerUrl, OllamaDefaultModel);
+        var models = await _llm.GetAvailableModelsAsync();
 
         if (models.Count > 0)
         {
@@ -103,6 +119,26 @@ public partial class SettingsViewModel : BaseViewModel
         else
         {
             OllamaStatus = "Could not connect. Is Ollama running?";
+        }
+    }
+
+    [RelayCommand]
+    public async Task TestLmStudioConnectionAsync()
+    {
+        LmStudioStatus = "Connecting...";
+        LmStudioConnected = false;
+        _llm.Configure(LmStudioServerUrl, LmStudioDefaultModel, LmStudioApiKey);
+        var models = await _llm.GetAvailableModelsAsync();
+
+        if (models.Count > 0)
+        {
+            LmStudioAvailableModels = new ObservableCollection<string>(models);
+            LmStudioStatus = $"Connected — {models.Count} model(s) found";
+            LmStudioConnected = true;
+        }
+        else
+        {
+            LmStudioStatus = "Could not connect. Is LM Studio running with the local server enabled?";
         }
     }
 
@@ -148,9 +184,13 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.WhisperModel = WhisperModel;
         _settings.WhisperCacheFolder = WhisperCacheFolder;
         _settings.TranscriptionChunkSeconds = TranscriptionChunkSeconds;
+        _settings.LlmProvider = LlmProvider;
         _settings.OllamaServerUrl = OllamaServerUrl;
         _settings.OllamaDefaultModel = OllamaDefaultModel;
         _settings.SummaryPrompt = SummaryPrompt;
+        _settings.LmStudioServerUrl = LmStudioServerUrl;
+        _settings.LmStudioDefaultModel = LmStudioDefaultModel;
+        _settings.LmStudioApiKey = LmStudioApiKey;
         _settings.AudioFormat = AudioFormat;
         _settings.Mp3Bitrate = Mp3Bitrate;
         _settings.DeleteAudioAfterTranscription = DeleteAudioAfterTranscription;

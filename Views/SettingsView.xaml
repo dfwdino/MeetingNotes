@@ -62,92 +62,162 @@
 
                 <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
-                <!-- ── OLLAMA ──────────────────────────────────── -->
-                <TextBlock Text="OLLAMA  (Summarization &amp; Chat)" Foreground="#FF0078D4"
+                <!-- ── AI / LOCAL LLM ─────────────────────────── -->
+                <TextBlock Text="AI / LOCAL LLM  (Summarization &amp; Chat)" Foreground="#FF0078D4"
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
-                        <TextBox x:Name="OllamaUrlBox" Style="{DynamicResource DarkTextBox}"/>
-                    </StackPanel>
-                    <Button Grid.Column="1" Content="Test Connection"
-                            Style="{DynamicResource GhostButton}"
-                            Margin="8,18,0,0" Click="TestOllama_Click"/>
-                </Grid>
-
-                <TextBlock x:Name="OllamaStatusText" Foreground="{DynamicResource TextSecondaryBrush}"
-                           FontSize="12" Margin="0,0,0,12"/>
-
-                <!-- Default model display + validation -->
-                <Border Margin="0,0,0,6" Padding="10,8" CornerRadius="4" Background="{DynamicResource InputBackgroundBrush}"
-                        BorderBrush="#FF3A3A3A" BorderThickness="1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
-                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock x:Name="DefaultModelLabel" Grid.Column="1"
-                                   FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock x:Name="DefaultModelStatus" Grid.Column="2"
-                                   FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                    </Grid>
-                </Border>
-
-                <!-- Warning when default not installed -->
-                <Border x:Name="DefaultModelWarning" CornerRadius="4" Padding="10,7"
-                        Margin="0,0,0,8" Visibility="Collapsed"
-                        Background="#FF3D2000" BorderBrush="#FF8B4500" BorderThickness="1">
-                    <TextBlock Foreground="#FFFFA726" FontSize="12" TextWrapping="Wrap">
-                        ⚠  This default model is not installed in Ollama.
-                        Select an installed model below and click Set as Default.
-                    </TextBlock>
-                </Border>
-
-                <!-- Installed models list + Set as Default button -->
-                <StackPanel x:Name="InstalledModelsPanel" Margin="0,0,0,12">
-                    <TextBlock Text="Installed Models" Foreground="{DynamicResource TextSecondaryBrush}"
-                               FontSize="12" Margin="0,0,0,6"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <ComboBox x:Name="OllamaModelBox"
-                                  Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="#FF3A3A3A" FontSize="13"/>
-                        <Button x:Name="SetDefaultModelButton" Grid.Column="1"
-                                Content="Set as Default" Style="{DynamicResource GhostButton}"
-                                Margin="8,0,0,0" Click="SetDefaultModel_Click"/>
-                    </Grid>
+                <StackPanel Margin="0,0,0,16">
+                    <TextBlock Text="AI Provider" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                    <ComboBox x:Name="ProviderBox" Width="180" HorizontalAlignment="Left"
+                              Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="#FF3A3A3A" FontSize="13"
+                              SelectionChanged="ProviderBox_SelectionChanged"/>
                 </StackPanel>
 
-                <!-- Manual entry — shown when server can't be reached -->
-                <StackPanel x:Name="ManualModelPanel" Margin="0,0,0,12" Visibility="Collapsed">
-                    <TextBlock Text="Server unreachable — enter model name manually"
-                               Foreground="#FFFFA726" FontSize="12" Margin="0,0,0,6"/>
-                    <Grid>
+                <!-- ── OLLAMA PANEL ── -->
+                <StackPanel x:Name="OllamaPanel">
+                    <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="ManualModelBox"
-                                 Style="{DynamicResource DarkTextBox}"
-                                 ui:ControlHelper.PlaceholderText="e.g. llama3.2:3b"/>
-                        <Button Grid.Column="1" Content="Set as Default"
+                        <StackPanel>
+                            <TextBlock Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                            <TextBox x:Name="OllamaUrlBox" Style="{DynamicResource DarkTextBox}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Test Connection"
                                 Style="{DynamicResource GhostButton}"
-                                Margin="8,0,0,0" Click="SetDefaultModelManual_Click"/>
+                                Margin="8,18,0,0" Click="TestOllama_Click"/>
                     </Grid>
+
+                    <TextBlock x:Name="OllamaStatusText" Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="12" Margin="0,0,0,12"/>
+
+                    <Border Margin="0,0,0,6" Padding="10,8" CornerRadius="4" Background="{DynamicResource InputBackgroundBrush}"
+                            BorderBrush="#FF3A3A3A" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="DefaultModelLabel" Grid.Column="1"
+                                       FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock x:Name="DefaultModelStatus" Grid.Column="2"
+                                       FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="DefaultModelWarning" CornerRadius="4" Padding="10,7"
+                            Margin="0,0,0,8" Visibility="Collapsed"
+                            Background="#FF3D2000" BorderBrush="#FF8B4500" BorderThickness="1">
+                        <TextBlock Foreground="#FFFFA726" FontSize="12" TextWrapping="Wrap">
+                            ⚠  This default model is not installed in Ollama.
+                            Select an installed model below and click Set as Default.
+                        </TextBlock>
+                    </Border>
+
+                    <StackPanel x:Name="InstalledModelsPanel" Margin="0,0,0,12">
+                        <TextBlock Text="Installed Models" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="12" Margin="0,0,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="OllamaModelBox"
+                                      Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                      BorderBrush="#FF3A3A3A" FontSize="13"/>
+                            <Button x:Name="SetDefaultModelButton" Grid.Column="1"
+                                    Content="Set as Default" Style="{DynamicResource GhostButton}"
+                                    Margin="8,0,0,0" Click="SetDefaultModel_Click"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel x:Name="ManualModelPanel" Margin="0,0,0,12" Visibility="Collapsed">
+                        <TextBlock Text="Server unreachable — enter model name manually"
+                                   Foreground="#FFFFA726" FontSize="12" Margin="0,0,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ManualModelBox"
+                                     Style="{DynamicResource DarkTextBox}"
+                                     ui:ControlHelper.PlaceholderText="e.g. llama3.2:3b"/>
+                            <Button Grid.Column="1" Content="Set as Default"
+                                    Style="{DynamicResource GhostButton}"
+                                    Margin="8,0,0,0" Click="SetDefaultModelManual_Click"/>
+                        </Grid>
+                    </StackPanel>
                 </StackPanel>
 
+                <!-- ── LM STUDIO PANEL ── -->
+                <StackPanel x:Name="LmStudioPanel" Visibility="Collapsed">
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                            <TextBox x:Name="LmStudioUrlBox" Style="{DynamicResource DarkTextBox}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Test Connection"
+                                Style="{DynamicResource GhostButton}"
+                                Margin="8,18,0,0" Click="TestLmStudio_Click"/>
+                    </Grid>
+
+                    <TextBlock x:Name="LmStudioStatusText" Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="12" Margin="0,0,0,12"/>
+
+                    <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="API Key (optional — leave blank if not enabled)"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBox x:Name="LmStudioApiKeyBox" Style="{DynamicResource DarkTextBox}"
+                                 ui:ControlHelper.PlaceholderText="sk-..."/>
+                    </StackPanel>
+
+                    <Border Margin="0,0,0,6" Padding="10,8" CornerRadius="4" Background="{DynamicResource InputBackgroundBrush}"
+                            BorderBrush="#FF3A3A3A" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="LmStudioDefaultModelLabel" Grid.Column="1"
+                                       FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock x:Name="LmStudioDefaultModelStatus" Grid.Column="2"
+                                       FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel x:Name="LmStudioModelsPanel" Margin="0,0,0,12">
+                        <TextBlock Text="Available Models" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="12" Margin="0,0,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="LmStudioModelBox"
+                                      Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                      BorderBrush="#FF3A3A3A" FontSize="13"/>
+                            <Button Grid.Column="1" Content="Set as Default"
+                                    Style="{DynamicResource GhostButton}"
+                                    Margin="8,0,0,0" Click="SetLmStudioDefaultModel_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Summary prompt — shared by both providers -->
                 <StackPanel Margin="0,0,0,24">
                     <TextBlock Text="Summary prompt template" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
