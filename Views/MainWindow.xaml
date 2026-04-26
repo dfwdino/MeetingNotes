@@ -305,14 +305,14 @@
                         Click="ExpandSidebarButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="bg" Background="#FF2D3A4A" CornerRadius="4"
-                                    BorderBrush="#FF3A5A7A" BorderThickness="1">
-                                <TextBlock Text="▶" Foreground="#FF5B9BD5" FontSize="11"
+                            <Border x:Name="bg" Background="{DynamicResource ExpandButtonBackgroundBrush}" CornerRadius="4"
+                                    BorderBrush="{DynamicResource ExpandButtonBorderBrush}" BorderThickness="1">
+                                <TextBlock Text="▶" Foreground="{DynamicResource ExpandButtonIconBrush}" FontSize="11"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bg" Property="Background" Value="#FF3A4D60"/>
+                                    <Setter TargetName="bg" Property="Background" Value="{DynamicResource ExpandButtonHoverBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -589,11 +589,11 @@
                 Click="ExpandListButton_Click">
             <Button.Template>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="bg" Background="#FF2D3A4A" CornerRadius="6"
-                            BorderBrush="#FF3A5A7A" BorderThickness="1">
+                    <Border x:Name="bg" Background="{DynamicResource ExpandButtonBackgroundBrush}" CornerRadius="6"
+                            BorderBrush="{DynamicResource ExpandButtonBorderBrush}" BorderThickness="1">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
-                            <TextBlock Text="▶" Foreground="#FF5B9BD5" FontSize="12"
+                            <TextBlock Text="▶" Foreground="{DynamicResource ExpandButtonIconBrush}" FontSize="12"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="Meetings" Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontSize="12" VerticalAlignment="Center"/>
@@ -601,7 +601,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bg" Property="Background" Value="#FF3A4D60"/>
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource ExpandButtonHoverBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

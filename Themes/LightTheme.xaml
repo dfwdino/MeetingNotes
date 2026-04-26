@@ -41,6 +41,10 @@
     <SolidColorBrush x:Key="ScrollThumbBrush"         Color="#FFBBBBBB"/>
     <SolidColorBrush x:Key="HeaderTextBrush"          Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="ActiveIndicatorBrush"     Color="#FF0078D4"/>
+    <SolidColorBrush x:Key="ExpandButtonBackgroundBrush" Color="#FFD0E4F7"/>
+    <SolidColorBrush x:Key="ExpandButtonBorderBrush"     Color="#FF7AB3D4"/>
+    <SolidColorBrush x:Key="ExpandButtonHoverBrush"      Color="#FFBBE0F7"/>
+    <SolidColorBrush x:Key="ExpandButtonIconBrush"       Color="#FF0078D4"/>
 
     <!-- RichTextBox for My Notes -->
     <Style x:Key="DarkRichTextBox" TargetType="RichTextBox">
