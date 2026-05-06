@@ -121,7 +121,7 @@ public partial class SettingsViewModel : BaseViewModel
 
         if (models.Count > 0)
         {
-            AvailableModels = new ObservableCollection<string>(models);
+            AvailableModels = [..models];
             OllamaStatus = $"Connected — {models.Count} model(s) found";
             OllamaConnected = true;
         }
@@ -141,7 +141,7 @@ public partial class SettingsViewModel : BaseViewModel
 
         if (models.Count > 0)
         {
-            LmStudioAvailableModels = new ObservableCollection<string>(models);
+            LmStudioAvailableModels = [..models];
             LmStudioStatus = $"Connected — {models.Count} model(s) found";
             LmStudioConnected = true;
         }

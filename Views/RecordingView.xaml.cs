@@ -6,7 +6,9 @@ using MeetingNotes.Services;
 using MeetingNotes.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
+using WpfColor = System.Windows.Media.Color;
 using System.Windows.Threading;
 using WpfMsgBox = System.Windows.MessageBox;
 
@@ -99,7 +101,7 @@ public partial class RecordingView : Page
         // Accumulate every file path so soft-delete can remove all of them
         _meeting.AudioFilePaths = string.IsNullOrEmpty(_meeting.AudioFilePaths)
             ? outputPath
-            : _meeting.AudioFilePaths + ";" + outputPath;
+            : $"{_meeting.AudioFilePaths};{outputPath}";
 
         await _db.UpdateMeetingAsync(_meeting);
 
@@ -179,31 +181,23 @@ public partial class RecordingView : Page
     }
 
     private static void UpdateBadgeState(Border border, System.Windows.Shapes.Ellipse dot,
-        System.Windows.Controls.TextBlock label, string baseName, bool muted)
+        TextBlock label, string baseName, bool muted)
     {
         if (muted)
         {
-            border.Background  = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(30, 20, 20));
-            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(80, 30, 30));
-            dot.Fill   = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(150, 50, 50));
-            label.Text       = baseName + " (muted)";
-            label.Foreground = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(150, 50, 50));
+            border.Background  = new SolidColorBrush(WpfColor.FromRgb(30, 20, 20));
+            border.BorderBrush = new SolidColorBrush(WpfColor.FromRgb(80, 30, 30));
+            dot.Fill           = new SolidColorBrush(WpfColor.FromRgb(150, 50, 50));
+            label.Text         = baseName + " (muted)";
+            label.Foreground   = new SolidColorBrush(WpfColor.FromRgb(150, 50, 50));
         }
         else
         {
-            border.Background  = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(21, 31, 21));
-            border.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(26, 61, 26));
-            dot.Fill   = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(76, 175, 80));
-            label.Text       = baseName;
-            label.Foreground = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(76, 175, 80));
+            border.Background  = new SolidColorBrush(WpfColor.FromRgb(21, 31, 21));
+            border.BorderBrush = new SolidColorBrush(WpfColor.FromRgb(26, 61, 26));
+            dot.Fill           = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            label.Text         = baseName;
+            label.Foreground   = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
         }
     }
 
@@ -211,9 +205,7 @@ public partial class RecordingView : Page
     {
         Dispatcher.Invoke(() =>
         {
-            // Shift waveform left and add new value
-            for (int i = 0; i < _waveformData.Length - 1; i++)
-                _waveformData[i] = _waveformData[i + 1];
+            _waveformData.AsSpan(1).CopyTo(_waveformData);
             _waveformData[^1] = Math.Max(4, level * 100);
             WaveformDisplay.Items.Refresh();
         });

@@ -44,7 +44,7 @@ public class AudioCaptureService : IDisposable
     // Lock that guards writer swaps during live chunk splitting.
     // Audio callbacks hold this lock only while writing (microseconds);
     // SplitChunkAsync holds it only while swapping references (nanoseconds).
-    private readonly object _writerLock = new();
+    private readonly Lock _writerLock = new();
 
     public bool    IsRecording    => _isRecording;
     public bool    IsMicMuted     => _micMuted;

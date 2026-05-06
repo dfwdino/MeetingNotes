@@ -24,7 +24,7 @@ public partial class SettingsView : Page
         WhisperModelBox.ItemsSource = _vm.WhisperModels;
         WhisperModelBox.SelectedItem = _vm.WhisperModel;
 
-        ChunkIntervalBox.ItemsSource = new[] { "30 seconds", "60 seconds", "2 minutes" };
+        ChunkIntervalBox.ItemsSource = (string[])["30 seconds", "60 seconds", "2 minutes"];
         ChunkIntervalBox.SelectedIndex = _vm.TranscriptionChunkSeconds switch
         {
             30 => 0, 120 => 2, _ => 1
@@ -54,7 +54,7 @@ public partial class SettingsView : Page
         AudioFormatBox.ItemsSource = _vm.AudioFormats;
         AudioFormatBox.SelectedItem = _vm.AudioFormat;
 
-        Mp3BitrateBox.ItemsSource = new[] { "32 kbps", "64 kbps", "128 kbps" };
+        Mp3BitrateBox.ItemsSource = (string[])["32 kbps", "64 kbps", "128 kbps"];
         Mp3BitrateBox.SelectedIndex = _vm.Mp3Bitrate switch
         {
             32 => 0, 128 => 2, _ => 1

@@ -150,6 +150,23 @@ public partial class ProcessingViewModel : BaseViewModel
             // In append mode: summarize only the new portion, then append to the existing
             // summary so the original is never lost.
             // In normal mode: summarize the full transcript (first run or explicit re-process).
+            var textToSummarize = (appendTranscript && !string.IsNullOrWhiteSpace(existingSummary))
+                ? newPortionText!
+                : meeting.Transcript!;
+
+            if (IsTooShortToSummarize(textToSummarize))
+            {
+                SummarizingDone = true;
+                SummarizingStatus = "Skipped";
+                StepChanged?.Invoke(this, "summarized");
+                meeting.Status = MeetingStatus.Ready;
+                await _db.UpdateMeetingAsync(meeting);
+                StatusMessage = "Complete!";
+                StatusChanged?.Invoke(this, "Complete! (transcript too short to summarize)");
+                ProcessingComplete?.Invoke(this, meeting);
+                return;
+            }
+
             var providerName = _settings.LlmProvider == "LmStudio" ? "LM Studio" : "Ollama";
             StatusMessage = $"Checking {providerName}...";
             SummarizingActive = true;
@@ -171,10 +188,6 @@ public partial class ProcessingViewModel : BaseViewModel
             StatusMessage = $"Generating summary with {providerName}...";
             SummarizingStatus = "In progress";
             StatusChanged?.Invoke(this, "Generating summary...");
-
-            var textToSummarize = (appendTranscript && !string.IsNullOrWhiteSpace(existingSummary))
-                ? newPortionText!
-                : meeting.Transcript!;
 
             var summary = await _llm.GenerateSummaryAsync(
                 textToSummarize, _settings.SummaryPrompt,
@@ -230,6 +243,10 @@ public partial class ProcessingViewModel : BaseViewModel
 
     public event EventHandler<(string message, Meeting meeting)>? ErrorOccurred;
     public event EventHandler<Meeting>? WhisperSetupRequired;
+
+    private static bool IsTooShortToSummarize(string? text) =>
+        string.IsNullOrWhiteSpace(text) ||
+        text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length < 10;
 
     private async Task<string?> CheckLlmAsync()
     {
