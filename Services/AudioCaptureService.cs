@@ -1,9 +1,17 @@
 using System.IO;
+using NAudio.CoreAudioApi;
 using NAudio.Lame;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 namespace MeetingNotes.Services;
+
+/// <summary>An audio device available for loopback or mic capture.</summary>
+public record AudioDeviceInfo(string Id, string Name)
+{
+    public static readonly AudioDeviceInfo SystemDefault = new("", "System Default");
+    public override string ToString() => Name;
+}
 
 public class AudioCaptureService : IDisposable
 {
@@ -11,6 +19,9 @@ public class AudioCaptureService : IDisposable
     private WaveInEvent?           _micCapture;
     private WaveFileWriter?        _wavWriter;     // system audio
     private WaveFileWriter?        _micWavWriter;  // mic audio (separate file)
+
+    // Kept alive while _systemCapture is active; null when using system-default constructor
+    private MMDevice? _loopbackDevice;
 
 
     // Waveform level: both sources update the peak; a fixed-rate timer fires
@@ -52,9 +63,78 @@ public class AudioCaptureService : IDisposable
     public void SetLoopbackMuted(bool muted) => _loopbackMuted = muted;
 
     // ──────────────────────────────────────────────────────────────
+    //  DEVICE ENUMERATION
+    // ──────────────────────────────────────────────────────────────
+    public static IReadOnlyList<AudioDeviceInfo> GetLoopbackDevices()
+    {
+        var list = new List<AudioDeviceInfo> { AudioDeviceInfo.SystemDefault };
+        try
+        {
+            using var e = new MMDeviceEnumerator();
+            foreach (var d in e.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+                if (!IsVirtualOrRemoteDevice(d.FriendlyName))
+                    list.Add(new AudioDeviceInfo(d.ID, d.FriendlyName));
+        }
+        catch { }
+        return list;
+    }
+
+    public static IReadOnlyList<AudioDeviceInfo> GetMicDevices()
+    {
+        var list = new List<AudioDeviceInfo> { AudioDeviceInfo.SystemDefault };
+        try
+        {
+            using var e = new MMDeviceEnumerator();
+            foreach (var d in e.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
+                if (!IsVirtualOrRemoteDevice(d.FriendlyName))
+                    list.Add(new AudioDeviceInfo(d.ID, d.FriendlyName));
+        }
+        catch { }
+        return list;
+    }
+
+    // Remote Audio is a Windows virtual device injected by Remote Desktop sessions.
+    private static bool IsVirtualOrRemoteDevice(string name) =>
+        name.Equals("Remote Audio", StringComparison.OrdinalIgnoreCase);
+
+    private static MMDevice? TryGetDevice(string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        try { using var e = new MMDeviceEnumerator(); return e.GetDevice(id); }
+        catch { return null; }
+    }
+
+    // WaveIn product names are truncated to 32 chars and are prefixes of the WASAPI friendly name.
+    private static int FindWaveInIndex(string wasapiFriendlyName)
+    {
+        for (int i = 0; i < WaveIn.DeviceCount; i++)
+        {
+            var waveName = WaveIn.GetCapabilities(i).ProductName.Trim();
+            if (waveName.Length > 0 &&
+                wasapiFriendlyName.StartsWith(waveName, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+        return 0;
+    }
+
+    private static int ResolveMicDeviceNumber(string? micDeviceId)
+    {
+        try
+        {
+            using var e = new MMDeviceEnumerator();
+            MMDevice target = string.IsNullOrEmpty(micDeviceId)
+                ? e.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Multimedia)
+                : (TryGetDevice(micDeviceId) ?? e.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Multimedia));
+            return FindWaveInIndex(target.FriendlyName);
+        }
+        catch { return 0; }
+    }
+
+    // ──────────────────────────────────────────────────────────────
     //  START
     // ──────────────────────────────────────────────────────────────
-    public void StartRecording(string outputPath, string format = "MP3", int mp3Bitrate = 64)
+    public void StartRecording(string outputPath, string format = "MP3", int mp3Bitrate = 64,
+        string? loopbackDeviceId = null, string? micDeviceId = null)
     {
         if (_isRecording) return;
 
@@ -66,9 +146,12 @@ public class AudioCaptureService : IDisposable
 
         // System audio → temp WAV (WASAPI provides silence automatically when nothing plays,
         // so the file is always correctly timed from t=0 without any padding needed)
-        _tempWavPath   = Path.ChangeExtension(outputPath, ".tmp.wav");
-        _systemCapture = new WasapiLoopbackCapture();
-        _wavWriter     = new WaveFileWriter(_tempWavPath, _systemCapture.WaveFormat);
+        _tempWavPath    = Path.ChangeExtension(outputPath, ".tmp.wav");
+        _loopbackDevice = TryGetDevice(loopbackDeviceId);
+        _systemCapture  = _loopbackDevice != null
+            ? new WasapiLoopbackCapture(_loopbackDevice)
+            : new WasapiLoopbackCapture();
+        _wavWriter      = new WaveFileWriter(_tempWavPath, _systemCapture.WaveFormat);
 
         _micMuted      = false;
         _loopbackMuted = false;
@@ -82,7 +165,11 @@ public class AudioCaptureService : IDisposable
             var dir  = Path.GetDirectoryName(_tempWavPath)!;
             var stem = Path.GetFileNameWithoutExtension(_tempWavPath);
             _micTempPath  = Path.Combine(dir, stem + ".mic.wav");
-            _micCapture   = new WaveInEvent { WaveFormat = new WaveFormat(44100, 16, 1) };
+            _micCapture   = new WaveInEvent
+            {
+                WaveFormat   = new WaveFormat(44100, 16, 1),
+                DeviceNumber = ResolveMicDeviceNumber(micDeviceId),
+            };
             _micWavWriter = new WaveFileWriter(_micTempPath, _micCapture.WaveFormat);
             _micCapture.DataAvailable += OnMicAudioAvailable;
             _micCapture.StartRecording();
@@ -128,6 +215,8 @@ public class AudioCaptureService : IDisposable
 
         _systemCapture?.Dispose();
         _systemCapture = null;
+        _loopbackDevice?.Dispose();
+        _loopbackDevice = null;
         _micCapture?.Dispose();
         _micCapture = null;
 

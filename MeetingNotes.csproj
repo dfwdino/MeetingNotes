@@ -12,8 +12,8 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>MeetingNotes.ico</ApplicationIcon>
     <Version>1.2026.04</Version>
-    <AssemblyVersion>1.2026.04.26</AssemblyVersion>
-    <FileVersion>1.2026.04.26</FileVersion>
+    <AssemblyVersion>1.2026.05.06</AssemblyVersion>
+    <FileVersion>1.2026.05.06</FileVersion>
     <Company>Shane</Company>
     <Product>Meeting Notes</Product>
   </PropertyGroup>

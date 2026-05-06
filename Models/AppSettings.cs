@@ -41,6 +41,10 @@ public class AppSettings
     public string AudioFormat { get; set; } = "MP3";
     public int Mp3Bitrate { get; set; } = 64;
     public bool DeleteAudioAfterTranscription { get; set; } = false;
+    /// <summary>WASAPI device ID for loopback capture. Empty = system default output device.</summary>
+    public string LoopbackDeviceId { get; set; } = string.Empty;
+    /// <summary>WASAPI device ID for microphone. Empty = system default recording device.</summary>
+    public string MicDeviceId { get; set; } = string.Empty;
 
     // General
     public string Theme { get; set; } = "Dark";

@@ -1,3 +1,4 @@
+using MeetingNotes.Services;
 using MeetingNotes.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -60,6 +61,15 @@ public partial class SettingsView : Page
         };
 
         DeleteAudioBox.IsChecked = _vm.DeleteAudioAfterTranscription;
+
+        LoopbackDeviceBox.ItemsSource = _vm.AvailableLoopbackDevices;
+        LoopbackDeviceBox.SelectedItem = _vm.AvailableLoopbackDevices
+            .FirstOrDefault(d => d.Id == _vm.LoopbackDeviceId) ?? _vm.AvailableLoopbackDevices.FirstOrDefault();
+
+        MicDeviceBox.ItemsSource = _vm.AvailableMicDevices;
+        MicDeviceBox.SelectedItem = _vm.AvailableMicDevices
+            .FirstOrDefault(d => d.Id == _vm.MicDeviceId) ?? _vm.AvailableMicDevices.FirstOrDefault();
+
         RecordingsFolderBox.Text = _vm.RecordingsFolder;
 
         ThemeBox.ItemsSource = _vm.Themes;
@@ -335,6 +345,12 @@ public partial class SettingsView : Page
             0 => 32, 2 => 128, _ => 64
         };
         _vm.DeleteAudioAfterTranscription = DeleteAudioBox.IsChecked == true;
+
+        if (LoopbackDeviceBox.SelectedItem is AudioDeviceInfo loopbackDevice)
+            _vm.LoopbackDeviceId = loopbackDevice.Id;
+        if (MicDeviceBox.SelectedItem is AudioDeviceInfo micDevice)
+            _vm.MicDeviceId = micDevice.Id;
+
         _vm.RecordingsFolder = RecordingsFolderBox.Text;
         _vm.Theme = ThemeBox.SelectedItem?.ToString() ?? "Dark";
         _vm.LaunchAtStartup = StartupBox.IsChecked == true;

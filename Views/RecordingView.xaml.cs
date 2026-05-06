@@ -36,7 +36,6 @@ public partial class RecordingView : Page
         _settings = settings;
         _audio.AudioLevelChanged += OnAudioLevel;
         WaveformDisplay.ItemsSource = _waveformData;
-        InitializeDotAnimation();
     }
 
     public async void SetMeeting(MeetingViewModel vm, string folderName, bool runAI = true)
@@ -47,11 +46,38 @@ public partial class RecordingView : Page
         FolderBadgeText.Text = $"📁 {folderName}";
 
         _meeting = await _db.GetMeetingAsync(vm.Id);
-        if (_meeting is not null)
-            await StartRecordingAsync();
+
+        var loopbackDevices = AudioCaptureService.GetLoopbackDevices();
+        var micDevices      = AudioCaptureService.GetMicDevices();
+
+        PreLoopbackDeviceBox.ItemsSource  = loopbackDevices;
+        PreLoopbackDeviceBox.SelectedItem = loopbackDevices
+            .FirstOrDefault(d => d.Id == _settings.LoopbackDeviceId)
+            ?? loopbackDevices.First();
+
+        PreMicDeviceBox.ItemsSource  = micDevices;
+        PreMicDeviceBox.SelectedItem = micDevices
+            .FirstOrDefault(d => d.Id == _settings.MicDeviceId)
+            ?? micDevices.First();
     }
 
-    private async Task StartRecordingAsync()
+    private async void StartButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_meeting is null) return;
+
+        StartButton.IsEnabled = false;
+
+        var loopbackId = (PreLoopbackDeviceBox.SelectedItem as AudioDeviceInfo)?.Id;
+        var micId      = (PreMicDeviceBox.SelectedItem as AudioDeviceInfo)?.Id;
+
+        PreRecordPanel.Visibility  = Visibility.Collapsed;
+        RecordingPanel.Visibility  = Visibility.Visible;
+        InitializeDotAnimation();
+
+        await StartRecordingAsync(loopbackId, micId);
+    }
+
+    private async Task StartRecordingAsync(string? loopbackDeviceId = null, string? micDeviceId = null)
     {
         if (_meeting is null) return;
 
@@ -59,7 +85,12 @@ public partial class RecordingView : Page
         var fileName = $"{_meeting.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
         var outputPath = Path.Combine(_settings.RecordingsFolder, fileName);
 
-        _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate);
+        _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate,
+            loopbackDeviceId, micDeviceId);
+
+        // Show the selected device name in the loopback badge
+        if (PreLoopbackDeviceBox.SelectedItem is AudioDeviceInfo ld && !string.IsNullOrEmpty(ld.Id))
+            LoopbackLabel.Text = ld.Name;
 
         _meeting.Status           = MeetingStatus.Recording;
         _meeting.RecordingStarted = DateTime.Now;

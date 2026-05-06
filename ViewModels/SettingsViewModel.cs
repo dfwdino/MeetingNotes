@@ -40,6 +40,11 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _audioFormat = "MP3";
     [ObservableProperty] private int _mp3Bitrate = 64;
     [ObservableProperty] private bool _deleteAudioAfterTranscription;
+    [ObservableProperty] private string _loopbackDeviceId = string.Empty;
+    [ObservableProperty] private string _micDeviceId = string.Empty;
+
+    public IReadOnlyList<AudioDeviceInfo> AvailableLoopbackDevices { get; private set; } = [];
+    public IReadOnlyList<AudioDeviceInfo> AvailableMicDevices      { get; private set; } = [];
 
     // Storage
     [ObservableProperty] private string _recordingsFolder = string.Empty;
@@ -72,6 +77,8 @@ public partial class SettingsViewModel : BaseViewModel
         _llm = llm;
         _settings = settings;
         LoadFromSettings(settings);
+        AvailableLoopbackDevices = AudioCaptureService.GetLoopbackDevices();
+        AvailableMicDevices      = AudioCaptureService.GetMicDevices();
     }
 
     private void LoadFromSettings(AppSettings s)
@@ -89,6 +96,8 @@ public partial class SettingsViewModel : BaseViewModel
         AudioFormat = s.AudioFormat;
         Mp3Bitrate = s.Mp3Bitrate;
         DeleteAudioAfterTranscription = s.DeleteAudioAfterTranscription;
+        LoopbackDeviceId = s.LoopbackDeviceId;
+        MicDeviceId = s.MicDeviceId;
         RecordingsFolder = s.RecordingsFolder;
         DatabaseFolder = s.DatabaseFolder;
         Theme = s.Theme;
@@ -194,6 +203,8 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.AudioFormat = AudioFormat;
         _settings.Mp3Bitrate = Mp3Bitrate;
         _settings.DeleteAudioAfterTranscription = DeleteAudioAfterTranscription;
+        _settings.LoopbackDeviceId = LoopbackDeviceId;
+        _settings.MicDeviceId = MicDeviceId;
         _settings.RecordingsFolder = RecordingsFolder;
         _settings.DatabaseFolder = DatabaseFolder;
         _settings.Theme = Theme;

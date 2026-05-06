@@ -54,7 +54,8 @@ public partial class RecordingViewModel : BaseViewModel, IDisposable
         var fileName = $"{_meeting.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
         var outputPath = Path.Combine(_settings.RecordingsFolder, fileName);
 
-        _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate);
+        _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate,
+            _settings.LoopbackDeviceId, _settings.MicDeviceId);
 
         _meeting.Status = MeetingStatus.Recording;
         _meeting.RecordingStarted = DateTime.Now;

@@ -22,7 +22,7 @@
                 <Border CornerRadius="14" Padding="10,4" Background="#FF3D1A1A">
                     <StackPanel Orientation="Horizontal">
                         <Ellipse x:Name="RecDot" Width="7" Height="7" Fill="#FFEF5350"
-                                 VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                 VerticalAlignment="Center" Margin="0,0,5,0" Opacity="0"/>
                         <TextBlock Text="REC" Foreground="#FFEF5350" FontSize="11" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Border>
@@ -35,8 +35,49 @@
             </Grid>
         </Border>
 
-        <!-- Controls — compact centre section -->
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,14,0,10">
+        <!-- Pre-recording device picker — shown before recording starts -->
+        <StackPanel x:Name="PreRecordPanel" Grid.Row="1" HorizontalAlignment="Center"
+                    Margin="0,18,0,10">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="System Audio"
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="PreLoopbackDeviceBox" Grid.Column="1"
+                          Background="{DynamicResource InputBackgroundBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          BorderBrush="#FF3A3A3A" FontSize="13"/>
+
+                <TextBlock Grid.Column="3" Text="Microphone"
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="PreMicDeviceBox" Grid.Column="4"
+                          Background="{DynamicResource InputBackgroundBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          BorderBrush="#FF3A3A3A" FontSize="13"/>
+
+                <Button x:Name="StartButton" Grid.Column="6"
+                        Width="140" Height="34" Click="StartButton_Click"
+                        Style="{DynamicResource PrimaryButton}">
+                    Start Recording
+                </Button>
+            </Grid>
+
+        </StackPanel>
+
+        <!-- Controls — shown once recording is active -->
+        <StackPanel x:Name="RecordingPanel" Grid.Row="1" HorizontalAlignment="Center"
+                    Margin="0,14,0,10" Visibility="Collapsed">
 
             <!-- Timer -->
             <TextBlock x:Name="TimerText" Text="00:00:00"
@@ -88,7 +129,7 @@
                 </Border>
             </StackPanel>
 
-            <!-- Stop button — smaller -->
+            <!-- Stop button -->
             <Button x:Name="StopButton" Width="50" Height="50"
                     HorizontalAlignment="Center" Click="StopButton_Click">
                 <Button.Template>
