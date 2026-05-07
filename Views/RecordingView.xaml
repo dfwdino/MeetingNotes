@@ -87,11 +87,11 @@
                        FontSize="11" HorizontalAlignment="Center"
                        Margin="0,2,0,10"/>
 
-            <!-- Waveform -->
-            <ItemsControl x:Name="WaveformDisplay" Margin="0,0,0,10">
+            <!-- Waveform — fixed height so the layout never shifts with audio level -->
+            <ItemsControl x:Name="WaveformDisplay" Height="60" ClipToBounds="True" Margin="0,0,0,10">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>

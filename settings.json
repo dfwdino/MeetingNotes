@@ -10,6 +10,7 @@
   "AudioFormat": "MP3",
   "Mp3Bitrate": 64,
   "DeleteAudioAfterTranscription": false,
+  "RunAiByDefault": false,
   "Theme": "System",
   "LaunchAtStartup": false,
   "MinimizeToTrayOnClose": true,

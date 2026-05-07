@@ -137,7 +137,8 @@ public partial class MainWindow : Window
             MeetingList.ItemsSource = _vm.Meetings;
             NewMeetingButton.Visibility = Visibility.Visible; // new folder auto-selects
             UpdateFolderTitle();
-            if (_vm.SelectedFolder is not null)
+            // Don't navigate away if a recording is in progress
+            if (!IsRecordingActive() && _vm.SelectedFolder is not null)
                 ShowFolderChat(_vm.SelectedFolder);
         }
     }
@@ -488,7 +489,10 @@ public partial class MainWindow : Window
         MeetingList.ItemsSource = _vm.Meetings;
 
         if (_vm.SelectedMeeting is not null)
-            ShowRecordingView(_vm.SelectedMeeting);
+        {
+            var settings = App.GetService<Models.AppSettings>();
+            ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault);
+        }
     }
 
     private void UpdateFolderTitle()

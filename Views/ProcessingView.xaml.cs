@@ -124,6 +124,12 @@ public partial class ProcessingView : Page
                 SummarizeStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromRgb(76, 175, 80));
                 break;
+            case "summarize-skipped":
+                Step2Check.Visibility = System.Windows.Visibility.Visible;
+                SummarizeStatusText.Text = "Skipped";
+                SummarizeStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromRgb(136, 136, 136));
+                break;
         }
     }
 }

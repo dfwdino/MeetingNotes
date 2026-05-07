@@ -61,6 +61,7 @@ public partial class SettingsView : Page
         };
 
         DeleteAudioBox.IsChecked = _vm.DeleteAudioAfterTranscription;
+        RunAiByDefaultBox.IsChecked = _vm.RunAiByDefault;
 
         LoopbackDeviceBox.ItemsSource = _vm.AvailableLoopbackDevices;
         LoopbackDeviceBox.SelectedItem = _vm.AvailableLoopbackDevices
@@ -345,6 +346,7 @@ public partial class SettingsView : Page
             0 => 32, 2 => 128, _ => 64
         };
         _vm.DeleteAudioAfterTranscription = DeleteAudioBox.IsChecked == true;
+        _vm.RunAiByDefault = RunAiByDefaultBox.IsChecked == true;
 
         if (LoopbackDeviceBox.SelectedItem is AudioDeviceInfo loopbackDevice)
             _vm.LoopbackDeviceId = loopbackDevice.Id;

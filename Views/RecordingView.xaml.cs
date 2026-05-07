@@ -206,7 +206,7 @@ public partial class RecordingView : Page
         Dispatcher.Invoke(() =>
         {
             _waveformData.AsSpan(1).CopyTo(_waveformData);
-            _waveformData[^1] = Math.Max(4, level * 100);
+            _waveformData[^1] = Math.Max(4, Math.Min(56, level * 100));
             WaveformDisplay.Items.Refresh();
         });
     }

@@ -40,6 +40,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _audioFormat = "MP3";
     [ObservableProperty] private int _mp3Bitrate = 64;
     [ObservableProperty] private bool _deleteAudioAfterTranscription;
+    [ObservableProperty] private bool _runAiByDefault;
     [ObservableProperty] private string _loopbackDeviceId = string.Empty;
     [ObservableProperty] private string _micDeviceId = string.Empty;
 
@@ -96,6 +97,7 @@ public partial class SettingsViewModel : BaseViewModel
         AudioFormat = s.AudioFormat;
         Mp3Bitrate = s.Mp3Bitrate;
         DeleteAudioAfterTranscription = s.DeleteAudioAfterTranscription;
+        RunAiByDefault = s.RunAiByDefault;
         LoopbackDeviceId = s.LoopbackDeviceId;
         MicDeviceId = s.MicDeviceId;
         RecordingsFolder = s.RecordingsFolder;
@@ -203,6 +205,7 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.AudioFormat = AudioFormat;
         _settings.Mp3Bitrate = Mp3Bitrate;
         _settings.DeleteAudioAfterTranscription = DeleteAudioAfterTranscription;
+        _settings.RunAiByDefault = RunAiByDefault;
         _settings.LoopbackDeviceId = LoopbackDeviceId;
         _settings.MicDeviceId = MicDeviceId;
         _settings.RecordingsFolder = RecordingsFolder;

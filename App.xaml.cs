@@ -61,6 +61,7 @@ public partial class App : System.Windows.Application
         {
             mainWindow.Dispatcher.Invoke(() =>
             {
+                if (GetService<Services.AudioCaptureService>().IsRecording) return;
                 var toast = new Views.RecordingPromptToast(appName);
                 toast.StartRecordingRequested += async (_, _) =>
                     await mainWindow.StartRecordingForWatcher(appName);

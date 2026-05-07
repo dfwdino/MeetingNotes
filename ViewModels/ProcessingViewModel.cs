@@ -137,7 +137,7 @@ public partial class ProcessingViewModel : BaseViewModel
             {
                 SummarizingDone = true;
                 SummarizingStatus = "Skipped";
-                StepChanged?.Invoke(this, "summarized");
+                StepChanged?.Invoke(this, "summarize-skipped");
                 meeting.Status = MeetingStatus.Ready;
                 await _db.UpdateMeetingAsync(meeting);
                 StatusMessage = "Complete!";
@@ -158,7 +158,7 @@ public partial class ProcessingViewModel : BaseViewModel
             {
                 SummarizingDone = true;
                 SummarizingStatus = "Skipped";
-                StepChanged?.Invoke(this, "summarized");
+                StepChanged?.Invoke(this, "summarize-skipped");
                 meeting.Status = MeetingStatus.Ready;
                 await _db.UpdateMeetingAsync(meeting);
                 StatusMessage = "Complete!";

@@ -40,6 +40,7 @@ public partial class MeetingDetailView : Page
         _meetingVm = vm;
         TitleBox.Text = vm.Title;
         MetaText.Text = $"{vm.DateDisplay}  ·  {vm.DurationDisplay}";
+        ReprocessRunAICheckBox.IsChecked = _settings.RunAiByDefault;
         LoadRichText(vm.MyNotes);
         TranscriptText.Text = AddLineSpacing(vm.Transcript);
         SummaryText.Text    = AddLineSpacing(vm.Summary);

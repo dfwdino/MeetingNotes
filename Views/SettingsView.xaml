@@ -252,9 +252,15 @@
                     </StackPanel>
                 </Grid>
 
-                <CheckBox x:Name="DeleteAudioBox" Margin="0,0,0,24"
+                <CheckBox x:Name="DeleteAudioBox" Margin="0,0,0,10"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Delete audio file after transcription (saves disk space)
+                </CheckBox>
+
+                <CheckBox x:Name="RunAiByDefaultBox" Margin="0,0,0,24"
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
+                          ToolTip="When checked, AI summarization is enabled by default for each new recording. Can be overridden per meeting.">
+                    Run AI summarization by default for new recordings
                 </CheckBox>
 
                 <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
