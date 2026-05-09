@@ -36,6 +36,9 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _lmStudioStatus = "Not checked";
     [ObservableProperty] private bool _lmStudioConnected;
 
+    // Meetings
+    [ObservableProperty] private string _defaultMeetingTitle = "Meeting";
+
     // Recording
     [ObservableProperty] private string _audioFormat = "MP3";
     [ObservableProperty] private int _mp3Bitrate = 64;
@@ -98,6 +101,7 @@ public partial class SettingsViewModel : BaseViewModel
         Mp3Bitrate = s.Mp3Bitrate;
         DeleteAudioAfterTranscription = s.DeleteAudioAfterTranscription;
         RunAiByDefault = s.RunAiByDefault;
+        DefaultMeetingTitle = s.DefaultMeetingTitle;
         LoopbackDeviceId = s.LoopbackDeviceId;
         MicDeviceId = s.MicDeviceId;
         RecordingsFolder = s.RecordingsFolder;
@@ -206,6 +210,7 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.Mp3Bitrate = Mp3Bitrate;
         _settings.DeleteAudioAfterTranscription = DeleteAudioAfterTranscription;
         _settings.RunAiByDefault = RunAiByDefault;
+        _settings.DefaultMeetingTitle = DefaultMeetingTitle;
         _settings.LoopbackDeviceId = LoopbackDeviceId;
         _settings.MicDeviceId = MicDeviceId;
         _settings.RecordingsFolder = RecordingsFolder;

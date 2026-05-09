@@ -98,7 +98,7 @@ public partial class MainViewModel : BaseViewModel
     public async Task AddMeetingAsync()
     {
         if (SelectedFolder is null) return;
-        var title = $"Meeting — {DateTime.Now:MMM d, yyyy}";
+        var title = $"{_settings.DefaultMeetingTitle} — {DateTime.Now:MMM d, yyyy}";
         var meeting = await _db.CreateMeetingAsync(SelectedFolder.Id, title);
         var vm = new MeetingViewModel(meeting);
         Meetings.Insert(0, vm);

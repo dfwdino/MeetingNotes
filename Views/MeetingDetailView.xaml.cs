@@ -38,8 +38,7 @@ public partial class MeetingDetailView : Page
     public async void LoadMeeting(MeetingViewModel vm)
     {
         _meetingVm = vm;
-        TitleBox.Text = vm.Title;
-        MetaText.Text = $"{vm.DateDisplay}  ·  {vm.DurationDisplay}";
+        MetaText.Text = $"{vm.Title}  ·  {vm.DateDisplay}  ·  {vm.DurationDisplay}";
         ReprocessRunAICheckBox.IsChecked = _settings.RunAiByDefault;
         LoadRichText(vm.MyNotes);
         TranscriptText.Text = AddLineSpacing(vm.Transcript);
@@ -174,15 +173,6 @@ public partial class MeetingDetailView : Page
         });
     }
 
-    private void TitleBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_meetingVm is null) return;
-        _meetingVm.Title = TitleBox.Text;
-        _notesChanged = true;
-        _saveTimer?.Stop();
-        _saveTimer?.Start();
-    }
-
     private void MyNotes_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_suppressNoteChange) return;
@@ -282,7 +272,7 @@ public partial class MeetingDetailView : Page
         if (_meetingVm is null || !_notesChanged) return;
         var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
         if (meeting is null) return;
-        meeting.Title = TitleBox.Text;
+        meeting.Title = _meetingVm.Title;
         meeting.MyNotes = GetRichText();
         await _db.UpdateMeetingAsync(meeting);
         _notesChanged = false;

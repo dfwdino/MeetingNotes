@@ -482,6 +482,19 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </StackPanel.Style>
+                                        <!-- Edit title -->
+                                        <Button Content="✏" FontSize="12" ToolTip="Rename meeting"
+                                                Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"
+                                                Tag="{Binding}" Click="EditMeeting_Click"
+                                                Background="Transparent" BorderThickness="0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
                                         <!-- Move to folder -->
                                         <Button Content="📁" FontSize="13" ToolTip="Move to folder..."
                                                 Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"

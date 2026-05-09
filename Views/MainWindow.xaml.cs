@@ -192,6 +192,28 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void EditMeeting_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not System.Windows.Controls.Button btn || btn.Tag is not MeetingViewModel meeting) return;
+
+        var dialog = new RenameMeetingDialog(meeting.Title) { Owner = this };
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.NewTitle)) return;
+
+        meeting.Title = dialog.NewTitle;
+        var db = App.GetService<Services.DatabaseService>();
+        var record = await db.GetMeetingAsync(meeting.Id);
+        if (record is not null)
+        {
+            record.Title = dialog.NewTitle;
+            await db.UpdateMeetingAsync(record);
+        }
+
+        // Refresh the detail view header if this meeting is open
+        if (_vm.SelectedMeeting?.Id == meeting.Id)
+            ShowMeetingDetail(meeting);
+    }
+
     private async void DeleteMeeting_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true; // prevent triggering MeetingItem_Click

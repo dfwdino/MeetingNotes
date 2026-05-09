@@ -47,6 +47,9 @@ public class AppSettings
     /// <summary>WASAPI device ID for microphone. Empty = system default recording device.</summary>
     public string MicDeviceId { get; set; } = string.Empty;
 
+    // Meetings
+    public string DefaultMeetingTitle { get; set; } = "Meeting";
+
     // General
     public string Theme { get; set; } = "Dark";
     public bool LaunchAtStartup { get; set; } = false;
