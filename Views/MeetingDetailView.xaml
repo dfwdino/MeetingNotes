@@ -20,15 +20,13 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!-- title intentionally omitted — edit via the pencil icon in the meeting list -->
-                <CheckBox Grid.Column="1" x:Name="ReprocessRunAICheckBox"
-                          Content="Run AI" IsChecked="True" Margin="12,0,0,0"
-                          Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
-                          ToolTip="When checked, AI summarization will run after recording or re-processing" Width="83"/>
-                <TextBlock Grid.Column="2" x:Name="MetaText"
+                <!-- date/duration — far left -->
+                <TextBlock Grid.Column="0" x:Name="MetaText"
                            Foreground="#FF666666" FontSize="12"
-                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                           VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
+                   
                     <Button x:Name="ReprocessButton"
                             Content="↺  Re-process"
                             Style="{DynamicResource GhostButton}"
@@ -41,10 +39,15 @@
                             ToolTip="Export meeting notes, transcript and summary to a text file"
                             Margin="0,0,8,0" Visibility="Collapsed"
                             Click="ExportButton_Click"/>
+                    <CheckBox Grid.Column="1" x:Name="ReprocessRunAICheckBox"
+Content="Use AI" IsChecked="True" Margin="12,0,0,0"
+Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+ToolTip="When checked, AI summarization will run after recording or re-processing" Width="83"/>
                     <Button x:Name="RecordButton"
                             Content="Record Ready"
                             Style="{DynamicResource DangerButton}"
                             Click="RecordButton_Click"/>
+                    
                 </StackPanel>
             </Grid>
         </Border>

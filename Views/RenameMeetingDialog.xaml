@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
-        Title="Rename Meeting" Height="160" Width="420"
+        Title="Rename Meeting" Height="200" Width="420"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource PanelBackgroundBrush}">
