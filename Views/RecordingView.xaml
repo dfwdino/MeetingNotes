@@ -76,7 +76,7 @@
         </StackPanel>
 
         <!-- Controls — shown once recording is active -->
-        <Grid x:Name="RecordingPanel" Grid.Row="1" Margin="16,12,16,0" Visibility="Collapsed">
+        <Grid x:Name="RecordingPanel" Grid.Row="1" Margin="16,12,16,10" Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>  <!-- Timer / waveform / stop row -->
                 <RowDefinition Height="Auto"/>  <!-- Audio source badges -->
