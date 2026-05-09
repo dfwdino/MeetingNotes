@@ -48,10 +48,9 @@
                     </TextBox.Style>
                 </TextBox>
                 <CheckBox Grid.Column="1" x:Name="ReprocessRunAICheckBox"
-                          Content="Run AI" IsChecked="True"
-                          VerticalAlignment="Center" Margin="12,0"
+                          Content="Run AI" IsChecked="True" Margin="12,0,0,0"
                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
-                          ToolTip="When checked, AI summarization will run after recording or re-processing"/>
+                          ToolTip="When checked, AI summarization will run after recording or re-processing" Width="83"/>
                 <TextBlock Grid.Column="2" x:Name="MetaText"
                            Foreground="#FF666666" FontSize="12"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
@@ -69,7 +68,7 @@
                             Margin="0,0,8,0" Visibility="Collapsed"
                             Click="ExportButton_Click"/>
                     <Button x:Name="RecordButton"
-                            Content="● Record New"
+                            Content="Record Ready"
                             Style="{DynamicResource DangerButton}"
                             Click="RecordButton_Click"/>
                 </StackPanel>
