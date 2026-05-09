@@ -95,9 +95,9 @@
                            FontSize="11" Margin="0,2,0,0"/>
             </StackPanel>
 
-            <!-- Waveform (center) — fixed height so layout never shifts with audio level -->
-            <ItemsControl x:Name="WaveformDisplay" Grid.Column="1" Grid.Row="0"
-                          Height="60" ClipToBounds="True" VerticalAlignment="Center">
+            <!-- Waveform (center) — spans both rows so it centers across timer + badges height -->
+            <ItemsControl x:Name="WaveformDisplay" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+                          Height="60" ClipToBounds="True" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"/>
