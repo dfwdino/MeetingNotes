@@ -41,6 +41,7 @@ public partial class MeetingDetailView : Page
         MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
                                     ? vm.DateDisplay
                                     : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
+
         ReprocessRunAICheckBox.IsChecked = _settings.RunAiByDefault;
         LoadRichText(vm.MyNotes);
         TranscriptText.Text = AddLineSpacing(vm.Transcript);
