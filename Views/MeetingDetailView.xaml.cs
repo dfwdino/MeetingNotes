@@ -38,7 +38,9 @@ public partial class MeetingDetailView : Page
     public async void LoadMeeting(MeetingViewModel vm)
     {
         _meetingVm = vm;
-        MetaText.Text = $"{vm.DateDisplay}  ·  {vm.DurationDisplay}";
+        MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
+                                    ? vm.DateDisplay
+                                    : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
         ReprocessRunAICheckBox.IsChecked = _settings.RunAiByDefault;
         LoadRichText(vm.MyNotes);
         TranscriptText.Text = AddLineSpacing(vm.Transcript);

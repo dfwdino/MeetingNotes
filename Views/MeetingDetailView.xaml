@@ -4,6 +4,12 @@
       xmlns:ui="http://schemas.modernwpf.com/2019"
       Background="{DynamicResource AppBackgroundBrush}">
 
+    <Page.Resources>
+        <!-- Define the missing SeparatorBrush resource so XDG-0001 is resolved.
+             Adjust the Color value to match your app theme if needed. -->
+        <SolidColorBrush x:Key="SeparatorBrush" Color="#FF2D2D2D"/>
+    </Page.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
