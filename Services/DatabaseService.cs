@@ -38,6 +38,16 @@ public class DatabaseService
                 )");
         }
         catch { /* table already exists or DB not yet ready — EnsureCreated covers fresh installs */ }
+
+        // Add DefaultMeetingTitle column for existing installs that predate this setting
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AppSettings')
+                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AppSettings') AND name = 'DefaultMeetingTitle')
+                ALTER TABLE AppSettings ADD DefaultMeetingTitle NVARCHAR(200) NOT NULL DEFAULT 'Meeting'");
+        }
+        catch { }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────

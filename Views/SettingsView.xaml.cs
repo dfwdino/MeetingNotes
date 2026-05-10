@@ -369,12 +369,20 @@ public partial class SettingsView : Page
         _vm.LogToFile = LogToFileBox.IsChecked == true;
         _vm.LogFolder = LogFolderBox.Text;
 
-        await _vm.SaveAsync();
-        App.ApplyTheme(_vm.Theme);
+        try
+        {
+            await _vm.SaveAsync();
+            App.ApplyTheme(_vm.Theme);
+            SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            SaveStatusText.Text = "✓  Settings saved";
+        }
+        catch (Exception ex)
+        {
+            SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(196, 43, 28));
+            SaveStatusText.Text = $"✗  Save failed: {ex.Message}";
+        }
 
-        SaveStatusText.Text = "✓  Settings saved";
         SaveStatusText.Visibility = Visibility.Visible;
-
         await Task.Delay(2500);
         SaveStatusText.Visibility = Visibility.Collapsed;
     }
