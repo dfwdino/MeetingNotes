@@ -348,8 +348,7 @@ public partial class SettingsView : Page
         };
         _vm.DeleteAudioAfterTranscription = DeleteAudioBox.IsChecked == true;
         _vm.RunAiByDefault = RunAiByDefaultBox.IsChecked == true;
-        _vm.DefaultMeetingTitle = string.IsNullOrWhiteSpace(DefaultMeetingTitleBox.Text)
-            ? "Meeting" : DefaultMeetingTitleBox.Text.Trim();
+        _vm.DefaultMeetingTitle = DefaultMeetingTitleBox.Text.Trim();
 
         if (LoopbackDeviceBox.SelectedItem is AudioDeviceInfo loopbackDevice)
             _vm.LoopbackDeviceId = loopbackDevice.Id;
