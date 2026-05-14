@@ -49,13 +49,19 @@ public partial class MainViewModel : BaseViewModel
             meetings.Select(m => new MeetingViewModel(m)));
     }
 
+    public async Task<FolderViewModel> CreateFolderAsync(string name)
+    {
+        var folder = await _db.CreateFolderAsync(name);
+        var vm = new FolderViewModel(folder);
+        Folders.Add(vm);
+        return vm;
+    }
+
     [RelayCommand]
     public async Task AddFolderAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return;
-        var folder = await _db.CreateFolderAsync(name);
-        var vm = new FolderViewModel(folder);
-        Folders.Add(vm);
+        var vm = await CreateFolderAsync(name);
         await SelectFolderAsync(vm);
     }
 

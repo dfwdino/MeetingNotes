@@ -37,6 +37,14 @@ public class AudioCaptureService : IDisposable
 
     private bool _isRecording;
 
+    // Silence auto-stop
+    private const float SilenceThreshold = 0.01f;
+    private DateTime _lastAudioActivity;
+    private bool _autoStopFired;
+    public bool AutoStopEnabled { get; set; }
+    public TimeSpan AutoStopSilenceTimeout { get; set; } = TimeSpan.FromMinutes(5);
+    public event EventHandler? AutoStopRequested;
+
     // Per-session mute flags — write silence instead of real audio so files stay time-aligned
     private volatile bool _micMuted;
     private volatile bool _loopbackMuted;
@@ -153,8 +161,10 @@ public class AudioCaptureService : IDisposable
             : new WasapiLoopbackCapture();
         _wavWriter      = new WaveFileWriter(_tempWavPath, _systemCapture.WaveFormat);
 
-        _micMuted      = false;
-        _loopbackMuted = false;
+        _micMuted          = false;
+        _loopbackMuted     = false;
+        _lastAudioActivity = DateTime.UtcNow;
+        _autoStopFired     = false;
 
         _systemCapture.DataAvailable += OnSystemAudioAvailable;
         _systemCapture.StartRecording();
@@ -181,12 +191,23 @@ public class AudioCaptureService : IDisposable
             _micTempPath  = null;
         }
 
-        // Waveform display at a fixed 20 fps
+        // Waveform display at a fixed 20 fps; also drives silence auto-stop
         _peakLevel  = 0f;
         _levelTimer = new System.Threading.Timer(_ =>
         {
             var level = Interlocked.Exchange(ref _peakLevel, 0f);
             AudioLevelChanged?.Invoke(this, level);
+
+            if (AutoStopEnabled && !_autoStopFired && _isRecording)
+            {
+                if (level >= SilenceThreshold)
+                    _lastAudioActivity = DateTime.UtcNow;
+                else if (DateTime.UtcNow - _lastAudioActivity >= AutoStopSilenceTimeout)
+                {
+                    _autoStopFired = true;
+                    AutoStopRequested?.Invoke(this, EventArgs.Empty);
+                }
+            }
         }, null, 50, 50);
 
         _isRecording = true;

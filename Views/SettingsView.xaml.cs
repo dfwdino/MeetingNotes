@@ -62,6 +62,12 @@ public partial class SettingsView : Page
 
         DeleteAudioBox.IsChecked = _vm.DeleteAudioAfterTranscription;
         RunAiByDefaultBox.IsChecked = _vm.RunAiByDefault;
+        AutoStopBox.IsChecked = _vm.AutoStopOnSilenceEnabled;
+        AutoStopMinutesBox.ItemsSource = (string[])["2 minutes", "5 minutes", "10 minutes", "15 minutes", "30 minutes"];
+        AutoStopMinutesBox.SelectedIndex = _vm.AutoStopSilenceMinutes switch
+        {
+            2 => 0, 10 => 2, 15 => 3, 30 => 4, _ => 1
+        };
         DefaultMeetingTitleBox.Text = _vm.DefaultMeetingTitle;
 
         LoopbackDeviceBox.ItemsSource = _vm.AvailableLoopbackDevices;
@@ -348,6 +354,11 @@ public partial class SettingsView : Page
         };
         _vm.DeleteAudioAfterTranscription = DeleteAudioBox.IsChecked == true;
         _vm.RunAiByDefault = RunAiByDefaultBox.IsChecked == true;
+        _vm.AutoStopOnSilenceEnabled = AutoStopBox.IsChecked == true;
+        _vm.AutoStopSilenceMinutes = AutoStopMinutesBox.SelectedIndex switch
+        {
+            0 => 2, 2 => 10, 3 => 15, 4 => 30, _ => 5
+        };
         _vm.DefaultMeetingTitle = DefaultMeetingTitleBox.Text.Trim();
 
         if (LoopbackDeviceBox.SelectedItem is AudioDeviceInfo loopbackDevice)

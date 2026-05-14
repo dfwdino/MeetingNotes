@@ -36,7 +36,8 @@ public partial class RecordingView : Page
         _audio = audio;
         _db = db;
         _settings = settings;
-        _audio.AudioLevelChanged += OnAudioLevel;
+        _audio.AudioLevelChanged  += OnAudioLevel;
+        _audio.AutoStopRequested  += OnAutoStopRequested;
         WaveformDisplay.ItemsSource = _waveformData;
     }
 
@@ -87,6 +88,8 @@ public partial class RecordingView : Page
         var fileName = $"{_meeting.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
         var outputPath = Path.Combine(_settings.RecordingsFolder, fileName);
 
+        _audio.AutoStopEnabled        = _settings.AutoStopOnSilenceEnabled;
+        _audio.AutoStopSilenceTimeout = TimeSpan.FromMinutes(_settings.AutoStopSilenceMinutes);
         _audio.StartRecording(outputPath, _settings.AudioFormat, _settings.Mp3Bitrate,
             loopbackDeviceId, micDeviceId);
 
@@ -116,7 +119,12 @@ public partial class RecordingView : Page
         _isRecording = true;
     }
 
-    private async void StopButton_Click(object sender, RoutedEventArgs e)
+    private async void StopButton_Click(object sender, RoutedEventArgs e) => await DoStopAsync();
+
+    private void OnAutoStopRequested(object? sender, EventArgs e) =>
+        Dispatcher.BeginInvoke(async () => await DoStopAsync());
+
+    private async Task DoStopAsync()
     {
         if (!_isRecording || _meeting is null) return;
 
@@ -262,6 +270,7 @@ public partial class RecordingView : Page
     private void Page_Unloaded(object sender, RoutedEventArgs e)
     {
         _audio.AudioLevelChanged -= OnAudioLevel;
+        _audio.AutoStopRequested -= OnAutoStopRequested;
         _timer?.Stop();
         _dotTimer?.Stop();
 

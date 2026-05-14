@@ -65,6 +65,7 @@ public partial class MainWindow : Window
 
     private async void AllMeetings_Click(object sender, MouseButtonEventArgs e)
     {
+        if (IsRecordingActive()) return;
         foreach (var f in _vm.Folders) f.IsSelected = false;
         FolderTitleText.Text = "All Meetings";
         NewMeetingButton.Visibility = Visibility.Collapsed;
@@ -130,17 +131,23 @@ public partial class MainWindow : Window
     private async void NewFolderButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new NewFolderDialog { Owner = this };
-        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.FolderName)) return;
+
+        if (IsRecordingActive())
         {
-            await _vm.AddFolderAsync(dialog.FolderName);
-            FolderList.ItemsSource = _vm.Folders;
-            MeetingList.ItemsSource = _vm.Meetings;
-            NewMeetingButton.Visibility = Visibility.Visible; // new folder auto-selects
-            UpdateFolderTitle();
-            // Don't navigate away if a recording is in progress
-            if (!IsRecordingActive() && _vm.SelectedFolder is not null)
-                ShowFolderChat(_vm.SelectedFolder);
+            // During recording: add to list but don't switch — switching replaces Meetings
+            // and SelectedFolder, which breaks OnRecordingStopped's meeting lookup.
+            await _vm.CreateFolderAsync(dialog.FolderName);
+            return;
         }
+
+        await _vm.AddFolderAsync(dialog.FolderName);
+        FolderList.ItemsSource = _vm.Folders;
+        MeetingList.ItemsSource = _vm.Meetings;
+        NewMeetingButton.Visibility = Visibility.Visible;
+        UpdateFolderTitle();
+        if (_vm.SelectedFolder is not null)
+            ShowFolderChat(_vm.SelectedFolder);
     }
 
     private async void NewMeetingButton_Click(object sender, RoutedEventArgs e)
@@ -209,14 +216,17 @@ public partial class MainWindow : Window
             await db.UpdateMeetingAsync(record);
         }
 
-        // Refresh the detail view header if this meeting is open
-        if (_vm.SelectedMeeting?.Id == meeting.Id)
+        // Refresh the detail view header if this meeting is open.
+        // Skip during recording — navigating away from RecordingView triggers
+        // Page_Unloaded which stops the audio capture as a safety net.
+        if (_vm.SelectedMeeting?.Id == meeting.Id && !IsRecordingActive())
             ShowMeetingDetail(meeting);
     }
 
     private async void DeleteMeeting_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true; // prevent triggering MeetingItem_Click
+        if (IsRecordingActive()) return;
         if (sender is System.Windows.Controls.Button btn &&
             btn.Tag is MeetingViewModel meeting)
         {
@@ -335,6 +345,7 @@ public partial class MainWindow : Window
     private void MoveMeeting_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
+        if (IsRecordingActive()) return;
         if (sender is not System.Windows.Controls.Button btn ||
             btn.Tag is not MeetingViewModel meeting) return;
 

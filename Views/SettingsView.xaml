@@ -257,11 +257,32 @@
                     Delete audio file after transcription (saves disk space)
                 </CheckBox>
 
-                <CheckBox x:Name="RunAiByDefaultBox" Margin="0,0,0,16"
+                <CheckBox x:Name="RunAiByDefaultBox" Margin="0,0,0,12"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
                           ToolTip="When checked, AI summarization is enabled by default for each new recording. Can be overridden per meeting.">
                     Run AI summarization by default for new recordings
                 </CheckBox>
+
+                <Grid Margin="0,0,0,16" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="AutoStopBox" Grid.Column="0"
+                              Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
+                              VerticalAlignment="Center" Margin="0,0,10,0"
+                              ToolTip="Automatically stop recording when no audio is detected for the selected duration.">
+                        Auto-stop recording after
+                    </CheckBox>
+                    <ComboBox x:Name="AutoStopMinutesBox" Grid.Column="1" Width="110"
+                              Background="{DynamicResource InputBackgroundBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="#FF3A3A3A" FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="of silence"
+                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13"
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </Grid>
 
                 <StackPanel Margin="0,0,0,24">
                     <TextBlock Text="Default meeting title" Foreground="{DynamicResource TextSecondaryBrush}"
