@@ -94,7 +94,8 @@ public partial class ProcessingViewModel : BaseViewModel
                 StepChanged?.Invoke(this, "transcribing");
                 StatusChanged?.Invoke(this, "Transcribing audio...");
 
-                _transcription.SegmentTranscribed += (_, line) =>
+                EventHandler<string>? segHandler = null;
+                segHandler = (_, line) =>
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -102,13 +103,22 @@ public partial class ProcessingViewModel : BaseViewModel
                         SegmentTranscribed?.Invoke(this, line);
                     });
                 };
+                _transcription.SegmentTranscribed += segHandler;
 
-                var modelPath = await _transcription.EnsureModelAsync(
-                    _settings.WhisperModel, _settings.WhisperCacheFolder);
-                _transcription.LoadModel(modelPath);
+                string newTranscript;
+                try
+                {
+                    var modelPath = await _transcription.EnsureModelAsync(
+                        _settings.WhisperModel, _settings.WhisperCacheFolder);
+                    _transcription.LoadModel(modelPath);
 
-                var newTranscript = await _transcription.TranscribeFileAsync(
-                    meeting.AudioFilePath!, cancellationToken);
+                    newTranscript = await _transcription.TranscribeFileAsync(
+                        meeting.AudioFilePath!, cancellationToken);
+                }
+                finally
+                {
+                    _transcription.SegmentTranscribed -= segHandler;
+                }
 
                 newPortionText = newTranscript;
 

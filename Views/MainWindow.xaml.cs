@@ -334,7 +334,7 @@ public partial class MainWindow : Window
 
     private void FolderNameBox_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.TextBox tb && tb.Tag is FolderViewModel folder)
+        if (sender is System.Windows.Controls.TextBox tb && tb.Tag is FolderViewModel folder && folder.IsEditing)
         {
             folder.Name = _folderNameBeforeEdit;
             folder.IsEditing = false;
