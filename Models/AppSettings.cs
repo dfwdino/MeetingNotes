@@ -31,11 +31,11 @@ public class AppSettings
         "5. How was everones attitude.\n\n" +
         "Be concise and specific. Use the actual names from the transcript.\n\nTranscript:\n";
 
-    // Storage — paths relative to the app folder so the whole thing is portable
+    // Storage — defaults to %LOCALAPPDATA%\MeetingNotes so MSIX installs can write here
     public string RecordingsFolder { get; set; } = Path.Combine(
-        AppContext.BaseDirectory, "Data", "Audio");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingNotes", "Data", "Audio");
     public string DatabaseFolder { get; set; } = Path.Combine(
-        AppContext.BaseDirectory, "Data", "DB");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingNotes", "Data", "DB");
 
     // Recording
     public string AudioFormat { get; set; } = "MP3";
@@ -54,7 +54,6 @@ public class AppSettings
 
     // General
     public string Theme { get; set; } = "Dark";
-    public bool LaunchAtStartup { get; set; } = false;
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool ShowTrayTimer { get; set; } = true;
 
@@ -70,5 +69,6 @@ public class AppSettings
     /// Where log files are written. Relative paths are appended to the app directory.
     /// Absolute paths (drive letter) and UNC paths (\\server\share) are used as-is.
     /// </summary>
-    public string LogFolder { get; set; } = Path.Combine(AppContext.BaseDirectory, "Data", "Logs");
+    public string LogFolder { get; set; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeetingNotes", "Data", "Logs");
 }

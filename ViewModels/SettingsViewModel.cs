@@ -58,7 +58,6 @@ public partial class SettingsViewModel : BaseViewModel
 
     // General
     [ObservableProperty] private string _theme = "Dark";
-    [ObservableProperty] private bool _launchAtStartup;
     [ObservableProperty] private bool _minimizeToTrayOnClose = true;
     [ObservableProperty] private bool _showTrayTimer = true;
 
@@ -111,7 +110,6 @@ public partial class SettingsViewModel : BaseViewModel
         RecordingsFolder = s.RecordingsFolder;
         DatabaseFolder = s.DatabaseFolder;
         Theme = s.Theme;
-        LaunchAtStartup = s.LaunchAtStartup;
         MinimizeToTrayOnClose = s.MinimizeToTrayOnClose;
         ShowTrayTimer = s.ShowTrayTimer;
         AppWatcherEnabled = s.AppWatcherEnabled;
@@ -222,7 +220,6 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.RecordingsFolder = RecordingsFolder;
         _settings.DatabaseFolder = DatabaseFolder;
         _settings.Theme = Theme;
-        _settings.LaunchAtStartup = LaunchAtStartup;
         _settings.MinimizeToTrayOnClose = MinimizeToTrayOnClose;
         _settings.ShowTrayTimer = ShowTrayTimer;
         _settings.AppWatcherEnabled = AppWatcherEnabled;

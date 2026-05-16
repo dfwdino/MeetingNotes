@@ -26,28 +26,24 @@ public class DatabaseService
         try
         {
             await db.Database.ExecuteSqlRawAsync(@"
-                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FolderChatMessages')
-                CREATE TABLE FolderChatMessages (
-                    Id        INT IDENTITY(1,1) PRIMARY KEY,
-                    FolderId  INT NOT NULL,
-                    Role      NVARCHAR(50) NOT NULL,
-                    Content   NVARCHAR(MAX) NOT NULL,
-                    Timestamp DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    CONSTRAINT FK_FolderChatMessages_Folders
-                        FOREIGN KEY (FolderId) REFERENCES Folders(Id) ON DELETE CASCADE
+                CREATE TABLE IF NOT EXISTS FolderChatMessages (
+                    Id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FolderId  INTEGER NOT NULL,
+                    Role      TEXT NOT NULL,
+                    Content   TEXT NOT NULL,
+                    Timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+                    FOREIGN KEY (FolderId) REFERENCES Folders(Id) ON DELETE CASCADE
                 )");
         }
-        catch { /* table already exists or DB not yet ready — EnsureCreated covers fresh installs */ }
+        catch { /* EnsureCreated covers fresh installs */ }
 
         // Add DefaultMeetingTitle column for existing installs that predate this setting
         try
         {
-            await db.Database.ExecuteSqlRawAsync(@"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AppSettings')
-                AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AppSettings') AND name = 'DefaultMeetingTitle')
-                ALTER TABLE AppSettings ADD DefaultMeetingTitle NVARCHAR(200) NOT NULL DEFAULT 'Meeting'");
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE AppSettings ADD COLUMN DefaultMeetingTitle TEXT NOT NULL DEFAULT 'Meeting'");
         }
-        catch { }
+        catch { /* column already exists — sqlite throws, we swallow */ }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────

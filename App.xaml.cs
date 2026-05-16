@@ -50,6 +50,9 @@ public partial class App : System.Windows.Application
         // Clean up any orphaned temp audio files left by a previous crash or force-close
         CleanupOrphanedTempFiles(settings.RecordingsFolder);
 
+        // Delete log files older than 7 days
+        CleanupOldLogFiles(settings.LogFolder);
+
         // Show main window
         var mainWindow = GetService<MainWindow>();
         SetupTrayIcon(mainWindow, settings);
@@ -122,62 +125,31 @@ public partial class App : System.Windows.Application
         }
     }
 
-    private static void EnsureCleanDatabaseRegistration(string newMdfPath)
+    private static void CleanupOldLogFiles(string logFolder)
     {
-        try
+        if (!Directory.Exists(logFolder)) return;
+        var cutoff = DateTime.Now.AddDays(-7);
+        foreach (var file in Directory.EnumerateFiles(logFolder, "*.log"))
         {
-            using var conn = new Microsoft.Data.SqlClient.SqlConnection(
-                "Server=(localdb)\\MSSQLLocalDB;Database=master;Trusted_Connection=True;");
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"SELECT physical_name FROM sys.master_files
-                                 WHERE database_id = DB_ID('MeetingNotes') AND file_id = 1";
-            var existingPath = cmd.ExecuteScalar() as string;
-
-            if (existingPath == null) return; // never registered — nothing to do
-
-            bool pathMismatch = !string.Equals(existingPath, newMdfPath,
-                                    StringComparison.OrdinalIgnoreCase);
-            bool fileMissing  = !File.Exists(existingPath); // clean-slate: file deleted but registration remains
-
-            if (!pathMismatch && !fileMissing) return; // registration is clean — leave it alone
-
-            // Registration is stale (wrong path or missing file) — drop it so we can attach fresh
-            // ALTER first for a clean disconnect; if the DB is in a bad state it may fail — that's OK
             try
             {
-                cmd.CommandText = "ALTER DATABASE [MeetingNotes] SET SINGLE_USER WITH ROLLBACK IMMEDIATE";
-                cmd.ExecuteNonQuery();
+                if (File.GetLastWriteTime(file) < cutoff)
+                    File.Delete(file);
             }
-            catch { /* DB may be suspect/unavailable due to missing file — skip, DROP still works */ }
-
-            try
-            {
-                cmd.CommandText = "DROP DATABASE [MeetingNotes]";
-                cmd.ExecuteNonQuery();
-            }
-            catch { /* already gone */ }
+            catch { }
         }
-        catch { /* LocalDB not available or DB never existed — nothing to clean up */ }
     }
 
     private static IServiceProvider BuildServices(AppSettings settings)
     {
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
 
-        // DB folder comes from settings.json (already resolved to a full path by SettingsService)
         var dbFolder   = settings.DatabaseFolder;
         Directory.CreateDirectory(dbFolder);
-        var newMdfPath = Path.Combine(dbFolder, "MeetingNotes.mdf");
-
-        // Drop stale LocalDB registration when path changed OR file was deleted (clean slate)
-        EnsureCleanDatabaseRegistration(newMdfPath);
-
-        var connectionString = $"Server=(localdb)\\MSSQLLocalDB;Database=MeetingNotes;Trusted_Connection=True;AttachDbFilename={newMdfPath}";
+        var dbPath = Path.Combine(dbFolder, "MeetingNotes.db");
 
         services.AddDbContextFactory<AppDbContext>(opt =>
-            opt.UseSqlServer(connectionString));
+            opt.UseSqlite($"Data Source={dbPath}"));
 
         // Services
         services.AddSingleton<IAppLogger, AppLogger>();

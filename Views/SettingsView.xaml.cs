@@ -83,7 +83,6 @@ public partial class SettingsView : Page
         ThemeBox.ItemsSource = _vm.Themes;
         ThemeBox.SelectedItem = _vm.Theme;
 
-        StartupBox.IsChecked = _vm.LaunchAtStartup;
         MinimizeTrayBox.IsChecked = _vm.MinimizeToTrayOnClose;
         TrayTimerBox.IsChecked = _vm.ShowTrayTimer;
 
@@ -368,7 +367,6 @@ public partial class SettingsView : Page
 
         _vm.RecordingsFolder = RecordingsFolderBox.Text;
         _vm.Theme = ThemeBox.SelectedItem?.ToString() ?? "Dark";
-        _vm.LaunchAtStartup = StartupBox.IsChecked == true;
         _vm.MinimizeToTrayOnClose = MinimizeTrayBox.IsChecked == true;
         _vm.ShowTrayTimer = TrayTimerBox.IsChecked == true;
         _vm.AppWatcherEnabled = AppWatcherEnabledBox.IsChecked == true;

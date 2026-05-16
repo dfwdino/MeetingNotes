@@ -12,11 +12,11 @@
   "DeleteAudioAfterTranscription": false,
   "RunAiByDefault": false,
   "Theme": "System",
-  "LaunchAtStartup": false,
   "MinimizeToTrayOnClose": true,
   "ShowTrayTimer": true,
   "AppWatcherEnabled": true,
   "WatchedApps": "zoom,ms-teams,discord,slack, webex",
+  "AutoStopSilenceMinutes": 2,
   "LogToDatabase": true,
   "LogToFile": true,
   "LogFolder": "\\Data\\Logs\\"

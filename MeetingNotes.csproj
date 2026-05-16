@@ -7,34 +7,44 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>14</LangVersion>
     <!-- Only copy English satellite assemblies — removes the 100+ language folders -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>MeetingNotes.ico</ApplicationIcon>
-    <Version>1.2026.05.14</Version>
-    <AssemblyVersion>1.2026.05.14</AssemblyVersion>
-    <FileVersion>1.2026.05.14</FileVersion>
+    <Version>1.2026.05.16</Version>
+    <AssemblyVersion>1.2026.05.16</AssemblyVersion>
+    <FileVersion>1.2026.05.16</FileVersion>
     <Company>Shane</Company>
     <Product>Meeting Notes</Product>
   </PropertyGroup>
 
+  <!-- MSIX Store publish: dotnet publish -c Release -r win-x64 -p:WindowsPackageType=MSIX
+       WindowsPackageType is intentionally NOT set here so normal builds and GitHub CI
+       continue to produce a plain exe. Pass it only when publishing for the Store. -->
+
   <ItemGroup>
-    <!-- settings.json ships with the app and is user-editable.
+    <!-- settings.json ships with the app as a seed template.
+         On first run, SettingsService copies it to %LOCALAPPDATA%\MeetingNotes\settings.json.
          PreserveNewest = only copy if the project file is newer than the output,
          so editing the output copy is never overwritten by a rebuild. -->
     <Content Include="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Resource Include="MeetingNotes.ico" />
+    <!-- MSIX package manifest (used when publishing with -p:WindowsPackageType=MSIX) -->
+    <None Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </None>
+    <!-- MSIX tile/logo image assets — create these PNGs before submitting to the Store.
+         See the comment block in Package.appxmanifest for required sizes. -->
+    <Content Include="Assets\**" Condition="Exists('Assets')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
     <PackageReference Include="NAudio" Version="2.3.0" />
     <PackageReference Include="NAudio.Lame" Version="2.1.0" />

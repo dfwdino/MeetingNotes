@@ -31,7 +31,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,8,0">
-                        <TextBlock Text="Model" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock FontWeight="Bold"  Text="Model" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="WhisperModelBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
@@ -47,7 +47,7 @@
                 </Grid>
 
                 <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="Model cache folder" Foreground="{DynamicResource TextSecondaryBrush}"
+                    <TextBlock FontWeight="Bold" Text="Model cache folder" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -63,11 +63,11 @@
                 <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
                 <!-- ── AI / LOCAL LLM ─────────────────────────── -->
-                <TextBlock Text="AI / LOCAL LLM  (Summarization &amp; Chat)" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                <TextBlock FontWeight="Bold" Text="AI / LOCAL LLM  (Summarization &amp; Chat)" Foreground="#FF0078D4"
+                           FontSize="11" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,16">
-                    <TextBlock Text="AI Provider" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock FontWeight="Bold" Text="AI Provider" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <ComboBox x:Name="ProviderBox" Width="180" HorizontalAlignment="Left"
                               Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                               BorderBrush="#FF3A3A3A" FontSize="13"
@@ -82,7 +82,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                            <TextBlock FontWeight="Bold" Text="Server URL" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                             <TextBox x:Name="OllamaUrlBox" Style="{DynamicResource DarkTextBox}"/>
                         </StackPanel>
                         <Button Grid.Column="1" Content="Test Connection"
@@ -101,7 +101,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                            <TextBlock FontWeight="Bold" Text="Default Model:" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock x:Name="DefaultModelLabel" Grid.Column="1"
                                        FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
@@ -121,7 +121,7 @@
                     </Border>
 
                     <StackPanel x:Name="InstalledModelsPanel" Margin="0,0,0,12">
-                        <TextBlock Text="Installed Models" Foreground="{DynamicResource TextSecondaryBrush}"
+                        <TextBlock FontWeight="Bold" Text="Installed Models" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -131,14 +131,14 @@
                             <ComboBox x:Name="OllamaModelBox"
                                       Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                       BorderBrush="#FF3A3A3A" FontSize="13"/>
-                            <Button x:Name="SetDefaultModelButton" Grid.Column="1"
+                            <Button FontWeight="Bold" Background="White"  x:Name="SetDefaultModelButton" Grid.Column="1"
                                     Content="Set as Default" Style="{DynamicResource GhostButton}"
                                     Margin="8,0,0,0" Click="SetDefaultModel_Click"/>
                         </Grid>
                     </StackPanel>
 
                     <StackPanel x:Name="ManualModelPanel" Margin="0,0,0,12" Visibility="Collapsed">
-                        <TextBlock Text="Server unreachable — enter model name manually"
+                        <TextBlock  Text="Server unreachable — enter model name manually"
                                    Foreground="#FFFFA726" FontSize="12" Margin="0,0,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -219,7 +219,7 @@
 
                 <!-- Summary prompt — shared by both providers -->
                 <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="Summary prompt template" Foreground="{DynamicResource TextSecondaryBrush}"
+                    <TextBlock FontWeight="Bold" Text="Summary prompt template" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <TextBox x:Name="SummaryPromptBox"
                              Style="{DynamicResource DarkTextBox}"
@@ -239,13 +239,13 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,8,0">
-                        <TextBlock Text="Audio format" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock FontWeight="Bold" Text="Audio format" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="AudioFormatBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <TextBlock Text="MP3 bitrate" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock FontWeight="Bold" Text="MP3 bitrate" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="Mp3BitrateBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
@@ -285,7 +285,7 @@
                 </Grid>
 
                 <StackPanel Margin="0,0,0,24">
-                    <TextBlock Text="Default meeting title" Foreground="{DynamicResource TextSecondaryBrush}"
+                    <TextBlock FontWeight="Bold" Text="Default meeting title" Foreground="{DynamicResource TextSecondaryBrush}"
                                FontSize="12" Margin="0,0,0,6"/>
                     <TextBox x:Name="DefaultMeetingTitleBox"
                              Style="{DynamicResource DarkTextBox}" FontSize="13"
@@ -312,14 +312,14 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,8,0">
-                        <TextBlock Text="System audio (loopback)" Foreground="{DynamicResource TextSecondaryBrush}"
+                        <TextBlock FontWeight="Bold" Text="System audio (loopback)" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="LoopbackDeviceBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                                   BorderBrush="#FF3A3A3A" FontSize="13"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                        <TextBlock Text="Microphone" Foreground="{DynamicResource TextSecondaryBrush}"
+                        <TextBlock FontWeight="Bold" Text="Microphone" Foreground="{DynamicResource TextSecondaryBrush}"
                                    FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="MicDeviceBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
@@ -334,7 +334,7 @@
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Recordings folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock FontWeight="Bold" Text="Recordings folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -353,16 +353,12 @@
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
-                    <TextBlock Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock FontWeight="Bold" Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <ComboBox x:Name="ThemeBox" Width="180" HorizontalAlignment="Left"
                               Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
                               BorderBrush="#FF3A3A3A" FontSize="13"/>
                 </StackPanel>
 
-                <CheckBox x:Name="StartupBox" Margin="0,0,0,10"
-                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
-                    Launch at Windows startup
-                </CheckBox>
                 <CheckBox x:Name="MinimizeTrayBox" Margin="0,0,0,10"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
                     Minimize to tray when closed
@@ -399,7 +395,7 @@
                 <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,20,0,20"/>
 
                 <!-- ── LOGGING ────────────────────────────────── -->
-                <TextBlock Text="LOGGING" Foreground="#FF0078D4"
+                <TextBlock  Text="LOGGING" Foreground="#FF0078D4"
                            FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
 
                 <CheckBox x:Name="LogToDatabaseBox" Margin="0,0,0,10"
@@ -413,7 +409,7 @@
                 </CheckBox>
 
                 <StackPanel Margin="0,0,0,4">
-                    <TextBlock Text="Log folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock FontWeight="Bold" Text="Log folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
