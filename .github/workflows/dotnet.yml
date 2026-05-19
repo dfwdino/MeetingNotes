@@ -45,11 +45,27 @@ jobs:
       run: dotnet build MeetingNotes.csproj -r win-x64 --no-restore -c Release
     - name: Zip Windows build
       run: Compress-Archive -Path ${{ env.ProjectLocation }}* -DestinationPath "${{ env.APP_NAME }} - ${{ env.VERSION }}.zip"
+    - name: Publish Windows app (for MSI)
+      run: dotnet publish MeetingNotes.csproj -r win-x64 --no-restore -c Release -o publish\ --self-contained false
+    - name: Derive MSI-compatible version
+      id: msi_ver
+      shell: pwsh
+      run: |
+        $parts = "${{ env.VERSION }}".Split('.')
+        $yy   = [int]$parts[1] - 2000
+        $mmdd = [int]$parts[2] * 100 + [int]$parts[3]
+        "msi_version=1.$yy.$mmdd" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+    - name: Install WiX v4
+      run: dotnet tool install --global wix
+    - name: Build MSI
+      run: wix build Installer\installer.wxs -d PublishDir=publish -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
     - name: Upload Windows build
       uses: actions/upload-artifact@v4
       with:
         name: windows-app
-        path: "${{ env.APP_NAME }} - ${{ env.VERSION }}.zip"
+        path: |
+          ${{ env.APP_NAME }} - ${{ env.VERSION }}.zip
+          nccameetingnotes.msi
 
   release:
     needs: [get-version, build-windows]
@@ -73,3 +89,4 @@ jobs:
         body: "Automated release from commit ${{ github.sha }}"
         files: |
           artifacts/windows/*.zip
+          artifacts/windows/nccameetingnotes.msi
