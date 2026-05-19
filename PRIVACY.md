@@ -14,7 +14,7 @@ MeetingNotes stores the following data **locally on your device only**, in `%LOC
 | Data | Where | Purpose |
 |------|-------|---------|
 | Audio recordings (MP3 or WAV) | Configurable folder (default: `Data\Audio`) | Preserves the original meeting audio |
-| Transcripts and AI summaries | Local SQL Server LocalDB database | Lets you search and review past meetings |
+| Transcripts and AI summaries | Local SQLite database | Lets you search and review past meetings |
 | Meeting titles, notes, and folder names | Local database | Organizes your meetings |
 | App settings | `settings.json` in `%LOCALAPPDATA%\MeetingNotes\` | Remembers your preferences |
 | Optional diagnostic logs | Configurable folder (default: `Data\Logs`) | Troubleshooting; disabled by default |
