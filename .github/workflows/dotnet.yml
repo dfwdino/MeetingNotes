@@ -56,11 +56,9 @@ jobs:
         $mmdd = [int]$parts[2] * 100 + [int]$parts[3]
         "msi_version=1.$yy.$mmdd" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
     - name: Install WiX
-      run: dotnet tool install --global wix
-    - name: Accept WiX EULA
-      run: wix --accept-eula
+      run: dotnet tool install --global wix --version "4.*"
     - name: Build MSI
-      run: wix build Installer\installer.wxs -d PublishDir=publish -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
+      run: wix build --accept-eula Installer\installer.wxs -d PublishDir=publish -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
     - name: Upload Windows build
       uses: actions/upload-artifact@v4
       with:
