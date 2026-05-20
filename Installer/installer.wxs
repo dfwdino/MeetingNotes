@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   WiX v4 installer for NCCA Meeting Notes.
-  Build via GitHub Actions — see .github/workflows/dotnet.yml.
-  Manual build:
-    dotnet tool install --global wix
-    dotnet publish MeetingNotes.csproj -r win-x64 -c Release -o publish\ --self-contained false
-    wix build Installer\installer.wxs -d PublishDir=publish -d Version=1.26.518 -o nccameetingnotes.msi
+  Build via GitHub Actions - see .github/workflows/dotnet.yml.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
