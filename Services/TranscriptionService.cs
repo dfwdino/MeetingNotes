@@ -55,27 +55,60 @@ public class TranscriptionService
 
         var transcript = new System.Text.StringBuilder();
 
+        // Sliding window of recent unique texts — suppresses Whisper's hallucination
+        // loop where it repeats the last phrase endlessly over silent/low-energy audio.
+        var recentTexts = new Queue<string>();
+        const int dedupWindow = 10;
+
         using var processor = _factory.CreateBuilder()
             .WithLanguage("en")
+            .WithProbabilities()
             .Build();
 
-        // Whisper.net requires a WAV/PCM stream — decode MP3 on the fly if needed
-        // Whisper.net requires 16kHz mono 16-bit PCM WAV
-        // AudioFileReader handles both MP3 and WAV, then we resample + convert
+        // Whisper.net requires 16kHz mono 16-bit PCM WAV; AudioFileReader handles MP3 and WAV.
         var memoryStream = new MemoryStream();
         using (var audioFileReader = new AudioFileReader(audioPath))
         {
-            var mono       = new StereoToMonoSampleProvider(audioFileReader);
-            var resampled  = new WdlResamplingSampleProvider(mono, 16000);
+            var mono      = new StereoToMonoSampleProvider(audioFileReader);
+            var resampled = new WdlResamplingSampleProvider(mono, 16000);
             WaveFileWriter.WriteWavFileToStream(memoryStream, resampled.ToWaveProvider16());
         }
         memoryStream.Position = 0;
 
         try
         {
+            var inDupeStreak = false;
+
             await foreach (var segment in processor.ProcessAsync(memoryStream, cancellationToken))
             {
-                var line = $"[{segment.Start:mm\\:ss}] {segment.Text.Trim()}";
+                var text = segment.Text.Trim();
+                if (string.IsNullOrWhiteSpace(text)) continue;
+
+                if (recentTexts.Any(t => string.Equals(t, text, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // First repeat in a streak: emit one marker so the user knows audio was unclear here.
+                    // All further repeats in the same streak are dropped silently.
+                    if (!inDupeStreak)
+                    {
+                        inDupeStreak = true;
+                        var marker = $"[{segment.Start:mm\\:ss}] [Audio unclear]";
+                        transcript.AppendLine(marker);
+                        SegmentTranscribed?.Invoke(this, marker);
+                    }
+                    continue;
+                }
+
+                inDupeStreak = false;
+                recentTexts.Enqueue(text);
+                if (recentTexts.Count > dedupWindow)
+                    recentTexts.Dequeue();
+
+                // Whisper probability is 0–1; values below ~0.3 indicate very low confidence.
+                var display = segment.Probability is > 0f and < 0.3f
+                    ? $"[Low confidence: {text}]"
+                    : text;
+
+                var line = $"[{segment.Start:mm\\:ss}] {display}";
                 transcript.AppendLine(line);
                 SegmentTranscribed?.Invoke(this, line);
             }

@@ -25,13 +25,13 @@
 
   <Identity
     Name="MeetingNotes"
-    Publisher="CN=Publisher"
-    Version="1.0.0.0"
+    Publisher="CN=dfwDino"
+    Version="1.2026.5.21"
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Meeting Notes</DisplayName>
-    <PublisherDisplayName>Shane</PublisherDisplayName>
+    <DisplayName>NCCA Meeting Notes</DisplayName>
+    <PublisherDisplayName>dfwDino</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
