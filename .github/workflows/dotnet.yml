@@ -61,6 +61,14 @@ jobs:
       run: wix eula accept wix7
     - name: Build MSI
       run: wix build Installer\installer.wxs -d PublishDir=publish -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
+    - name: Sign MSI
+      shell: pwsh
+      run: |
+        $pfxPath = "signing.pfx"
+        [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String("${{ secrets.SIGNING_CERT_PFX }}"))
+        $signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -Last 1).FullName
+        & $signtool sign /fd SHA256 /p "${{ secrets.SIGNING_CERT_PASSWORD }}" /f $pfxPath nccameetingnotes.msi
+        Remove-Item $pfxPath
     - name: Upload Windows build
       uses: actions/upload-artifact@v4
       with:
@@ -92,14 +100,6 @@ jobs:
         files: |
           artifacts/windows/*.zip
           artifacts/windows/nccameetingnotes.msi
-    - name: Sign MSI
-      shell: pwsh
-      run: |
-        $pfxPath = "signing.pfx"
-        [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String("${{ secrets.SIGNING_CERT_PFX }}"))
-        $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
-        & $signtool sign /fd SHA256 /p "${{ secrets.SIGNING_CERT_PASSWORD }}" /f $pfxPath artifacts/windows/nccameetingnotes.msi
-        Remove-Item $pfxPath
     - name: Upload MSI to Azure Blob Storage
       run: |
         az storage blob upload \
