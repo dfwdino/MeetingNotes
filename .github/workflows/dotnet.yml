@@ -92,3 +92,11 @@ jobs:
         files: |
           artifacts/windows/*.zip
           artifacts/windows/nccameetingnotes.msi
+    - name: Upload MSI to Azure Blob Storage
+      run: |
+        az storage blob upload \
+          --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+          --container-name releases \
+          --file artifacts/windows/nccameetingnotes.msi \
+          --name nccameetingnotes.msi \
+          --overwrite
