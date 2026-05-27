@@ -48,7 +48,22 @@ public class TranscriptionService
         _loadedModelPath = modelPath;
     }
 
+    /// <param name="audioPath">Path to the audio file to transcribe.</param>
+    /// <param name="beamSize">
+    /// Beam search width. 1 = greedy (fastest); 5 = recommended balance of speed and accuracy.
+    /// Higher values are especially helpful for accented or non-native speech because Whisper
+    /// scores multiple candidate sequences and picks the most likely overall, rather than
+    /// committing greedily to each token in turn.
+    /// </param>
+    /// <param name="initialPrompt">
+    /// Optional seed text Whisper sees before the audio. Use participant names, technical
+    /// abbreviations, or domain vocabulary so Whisper maps unfamiliar pronunciations to the
+    /// right words. Example: "Alice, Bob, sprint review, JIRA, API gateway."
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     public async Task<string> TranscribeFileAsync(string audioPath,
+        int beamSize = 5,
+        string? initialPrompt = null,
         CancellationToken cancellationToken = default)
     {
         if (_factory is null) throw new InvalidOperationException("Model not loaded.");
@@ -60,10 +75,30 @@ public class TranscriptionService
         var recentTexts = new Queue<string>();
         const int dedupWindow = 10;
 
-        using var processor = _factory.CreateBuilder()
+        var builder = _factory.CreateBuilder()
             .WithLanguage("en")
-            .WithProbabilities()
-            .Build();
+            .WithProbabilities();
+
+        // Prime Whisper with expected vocabulary (names, acronyms, domain terms).
+        // This is especially effective for accented speech because Whisper biases its
+        // token probabilities toward words it has already "seen" in the prompt.
+        if (!string.IsNullOrWhiteSpace(initialPrompt))
+            builder = builder.WithPrompt(initialPrompt);
+
+        // Beam search evaluates beamSize candidate sequences simultaneously instead of
+        // committing greedily to each token. Significantly reduces mis-transcriptions of
+        // non-native pronunciation patterns. beamSize=1 reverts to greedy (default before
+        // this change); beamSize=5 is the Whisper paper's recommended setting.
+        //
+        // WithBeamSearchSamplingStrategy() is declared as returning IWhisperSamplingStrategyBuilder
+        // but always yields a BeamSearchSamplingStrategyBuilder at runtime. Cast to reach
+        // WithBeamSize, which is only on the concrete type.
+        using var processor = beamSize > 1
+            ? ((BeamSearchSamplingStrategyBuilder)builder.WithBeamSearchSamplingStrategy())
+                  .WithBeamSize(beamSize)
+                  .ParentBuilder
+                  .Build()
+            : builder.Build();
 
         // Whisper.net requires 16kHz mono 16-bit PCM WAV; AudioFileReader handles MP3 and WAV.
         var memoryStream = new MemoryStream();
@@ -103,8 +138,11 @@ public class TranscriptionService
                 if (recentTexts.Count > dedupWindow)
                     recentTexts.Dequeue();
 
-                // Whisper probability is 0–1; values below ~0.3 indicate very low confidence.
-                var display = segment.Probability is > 0f and < 0.3f
+                // Whisper probability is 0–1; values below ~0.2 indicate very low confidence.
+                // Threshold is intentionally kept low (was 0.3) because accented speakers
+                // often produce valid transcriptions with probabilities in the 0.2–0.3 range —
+                // a threshold of 0.3 was incorrectly flagging those as unclear.
+                var display = segment.Probability is > 0f and < 0.2f
                     ? $"[Low confidence: {text}]"
                     : text;
 

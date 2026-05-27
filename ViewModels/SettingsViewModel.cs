@@ -16,6 +16,8 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _whisperModel = "Base";
     [ObservableProperty] private string _whisperCacheFolder = string.Empty;
     [ObservableProperty] private int _transcriptionChunkSeconds = 60;
+    [ObservableProperty] private int _whisperBeamSize = 5;
+    [ObservableProperty] private string _whisperInitialPrompt = string.Empty;
 
     // Provider
     [ObservableProperty] private string _llmProvider = "Ollama";
@@ -70,7 +72,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private bool _logToFile;
     [ObservableProperty] private string _logFolder = string.Empty;
 
-    public string[] WhisperModels { get; } = ["Tiny", "Base", "Small", "Medium"];
+    public string[] WhisperModels { get; } = ["Tiny", "Base", "Small", "Medium", "Large"];
     public string[] AudioFormats { get; } = ["MP3", "WAV"];
     public int[] Mp3Bitrates { get; } = [32, 64, 128];
     public int[] ChunkIntervals { get; } = [30, 60, 120];
@@ -91,6 +93,8 @@ public partial class SettingsViewModel : BaseViewModel
         WhisperModel = s.WhisperModel;
         WhisperCacheFolder = s.WhisperCacheFolder;
         TranscriptionChunkSeconds = s.TranscriptionChunkSeconds;
+        WhisperBeamSize = s.WhisperBeamSize;
+        WhisperInitialPrompt = s.WhisperInitialPrompt;
         LlmProvider = s.LlmProvider;
         OllamaServerUrl = s.OllamaServerUrl;
         OllamaDefaultModel = s.OllamaDefaultModel;
@@ -201,6 +205,8 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.WhisperModel = WhisperModel;
         _settings.WhisperCacheFolder = WhisperCacheFolder;
         _settings.TranscriptionChunkSeconds = TranscriptionChunkSeconds;
+        _settings.WhisperBeamSize = WhisperBeamSize;
+        _settings.WhisperInitialPrompt = WhisperInitialPrompt;
         _settings.LlmProvider = LlmProvider;
         _settings.OllamaServerUrl = OllamaServerUrl;
         _settings.OllamaDefaultModel = OllamaDefaultModel;

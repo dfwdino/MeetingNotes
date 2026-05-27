@@ -44,6 +44,22 @@ public class DatabaseService
                 "ALTER TABLE AppSettings ADD COLUMN DefaultMeetingTitle TEXT NOT NULL DEFAULT 'Meeting'");
         }
         catch { /* column already exists — sqlite throws, we swallow */ }
+
+        // Add WhisperBeamSize for existing installs (default 5 = accurate beam search)
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE AppSettings ADD COLUMN WhisperBeamSize INTEGER NOT NULL DEFAULT 5");
+        }
+        catch { /* column already exists */ }
+
+        // Add WhisperInitialPrompt for existing installs (empty = no priming)
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE AppSettings ADD COLUMN WhisperInitialPrompt TEXT NOT NULL DEFAULT ''");
+        }
+        catch { /* column already exists */ }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────

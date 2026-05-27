@@ -113,7 +113,11 @@ public partial class ProcessingViewModel : BaseViewModel
                     _transcription.LoadModel(modelPath);
 
                     newTranscript = await _transcription.TranscribeFileAsync(
-                        meeting.AudioFilePath!, cancellationToken);
+                        meeting.AudioFilePath!,
+                        beamSize: _settings.WhisperBeamSize,
+                        initialPrompt: string.IsNullOrWhiteSpace(_settings.WhisperInitialPrompt)
+                            ? null : _settings.WhisperInitialPrompt,
+                        cancellationToken);
                 }
                 finally
                 {
@@ -133,7 +137,7 @@ public partial class ProcessingViewModel : BaseViewModel
             {
                 // Already transcribed — show existing transcript in preview
                 newPortionText = meeting.Transcript;
-                LiveTranscriptPreview = meeting.Transcript;
+                LiveTranscriptPreview = meeting.Transcript ?? string.Empty;
                 StatusChanged?.Invoke(this, "Transcript already exists, re-summarizing...");
             }
 

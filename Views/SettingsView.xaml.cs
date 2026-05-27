@@ -24,6 +24,14 @@ public partial class SettingsView : Page
         WhisperModelBox.ItemsSource = _vm.WhisperModels;
         WhisperModelBox.SelectedItem = _vm.WhisperModel;
 
+        WhisperBeamSizeBox.ItemsSource = (string[])["1 — Fastest", "3 — Balanced", "5 — Accurate (recommended)", "8 — Most accurate"];
+        WhisperBeamSizeBox.SelectedIndex = _vm.WhisperBeamSize switch
+        {
+            1 => 0, 3 => 1, 8 => 3, _ => 2   // default to index 2 = beam 5
+        };
+
+        WhisperInitialPromptBox.Text = _vm.WhisperInitialPrompt;
+
         ChunkIntervalBox.ItemsSource = (string[])["30 seconds", "60 seconds", "2 minutes"];
         ChunkIntervalBox.SelectedIndex = _vm.TranscriptionChunkSeconds switch
         {
@@ -331,6 +339,11 @@ public partial class SettingsView : Page
     private async void SaveButton_Click(object sender, RoutedEventArgs e)
     {
         _vm.WhisperModel = WhisperModelBox.SelectedItem?.ToString() ?? "Base";
+        _vm.WhisperBeamSize = WhisperBeamSizeBox.SelectedIndex switch
+        {
+            0 => 1, 1 => 3, 3 => 8, _ => 5   // index 2 = "Accurate (recommended)" = 5
+        };
+        _vm.WhisperInitialPrompt = WhisperInitialPromptBox.Text.Trim();
         _vm.WhisperCacheFolder = WhisperFolderBox.Text;
         _vm.TranscriptionChunkSeconds = ChunkIntervalBox.SelectedIndex switch
         {

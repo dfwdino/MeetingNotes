@@ -10,6 +10,18 @@ public class AppSettings
     public string WhisperCacheFolder { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "whisper.net");
     public int TranscriptionChunkSeconds { get; set; } = 60;
+    /// <summary>
+    /// Beam search width passed to Whisper. 1 = greedy (fastest); 5 = recommended.
+    /// Higher values improve accuracy for accented or non-native speech at the cost of
+    /// slightly longer transcription time.
+    /// </summary>
+    public int WhisperBeamSize { get; set; } = 5;
+    /// <summary>
+    /// Optional seed text shown to Whisper before it processes each audio file.
+    /// Include participant names, acronyms, and domain terms so Whisper biases its
+    /// output toward words it is likely to encounter (e.g. "Alice, Bob, JIRA, API gateway").
+    /// </summary>
+    public string WhisperInitialPrompt { get; set; } = string.Empty;
 
     // AI Provider
     public string LlmProvider { get; set; } = "Ollama"; // "Ollama" or "LmStudio"

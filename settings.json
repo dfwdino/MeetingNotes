@@ -2,6 +2,8 @@
   "WhisperModel": "Base",
   "WhisperCacheFolder": "",
   "TranscriptionChunkSeconds": 60,
+  "WhisperBeamSize": 5,
+  "WhisperInitialPrompt": "",
   "OllamaServerUrl": "http://localhost:11434",
   "OllamaDefaultModel": "llama3.2:3b",
   "SummaryPrompt": "You are a meeting assistant. Based on the following transcript, provide:\n1. A brief overview (2-3 sentences)\n2. Action items (who does what)\n3. Key decisions made\n4. Follow-up items\n5. How was everyones attitude.\n\nBe concise and specific. Use the actual names from the transcript.\n\nTranscript:\n",
