@@ -60,7 +60,10 @@ jobs:
     - name: Accept WiX EULA
       run: wix eula accept wix7
     - name: Build MSI
-      run: wix build Installer\installer.wxs -d PublishDir=publish -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
+      shell: pwsh
+      run: |
+        $publishAbs = (Resolve-Path publish).Path
+        wix build Installer\installer.wxs -d "PublishDir=$publishAbs" -d Version=${{ steps.msi_ver.outputs.msi_version }} -o nccameetingnotes.msi
     - name: Sign MSI
       shell: pwsh
       run: |
