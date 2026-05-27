@@ -34,7 +34,8 @@
                         <TextBlock FontWeight="Bold" Text="Model" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
                         <ComboBox x:Name="WhisperModelBox"
                                   Background="{DynamicResource InputBackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="#FF3A3A3A" FontSize="13"/>
+                                  BorderBrush="#FF3A3A3A" FontSize="13"
+                                  SelectionChanged="WhisperModelBox_SelectionChanged"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="8,0,0,0"
                                 ToolTip="Higher beam size = Whisper scores more candidate sequences before choosing. Noticeably better for accented or non-native speech. Adds a few seconds to transcription.">
@@ -46,6 +47,16 @@
                 </Grid>
                 <!-- Hidden chunk interval box preserved for future use -->
                 <ComboBox x:Name="ChunkIntervalBox" Visibility="Collapsed"/>
+
+                <!-- Shown only when the user picks a different model than the one currently loaded -->
+                <Border x:Name="ModelDownloadWarning" Visibility="Collapsed"
+                        CornerRadius="4" Padding="10,8" Margin="0,4,0,8"
+                        Background="#FF1A2A1A" BorderBrush="#FF4CAF50" BorderThickness="1">
+                    <TextBlock Foreground="#FF81C784" FontSize="12" TextWrapping="Wrap">
+                        ⬇  This model hasn't been downloaded yet. The download will start automatically on the next app restart or when you transcribe — whichever comes first. Larger models can be several hundred MB, so make sure you have a good connection ready.
+                    </TextBlock>
+                </Border>
+
                 <TextBlock Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap">
                     💡 For meetings with non-native or accented speakers, use <Run FontWeight="SemiBold">Small</Run> or <Run FontWeight="SemiBold">Medium</Run> — they handle accent variation significantly better than Base.
                 </TextBlock>

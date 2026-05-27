@@ -308,6 +308,23 @@ public partial class SettingsView : Page
 
     // ── Browse / folder ───────────────────────────────────────────────
 
+    private void WhisperModelBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ModelDownloadWarning is null) return;
+
+        var selected = WhisperModelBox.SelectedItem?.ToString() ?? string.Empty;
+        var modelFileName = $"ggml-{selected.ToLower()}.bin";
+        var cacheFolder = string.IsNullOrWhiteSpace(WhisperFolderBox?.Text)
+            ? _vm.WhisperCacheFolder
+            : WhisperFolderBox.Text;
+        var modelPath = System.IO.Path.Combine(cacheFolder, modelFileName);
+
+        // Show the download warning only if the selected model file doesn't exist yet
+        ModelDownloadWarning.Visibility = System.IO.File.Exists(modelPath)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
     private void BrowseRecordingsFolder_Click(object sender, RoutedEventArgs e)
     {
         _vm.BrowseRecordingsFolderCommand.Execute(null);
