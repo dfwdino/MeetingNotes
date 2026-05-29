@@ -13,6 +13,7 @@
   "Mp3Bitrate": 64,
   "DeleteAudioAfterTranscription": false,
   "RunAiByDefault": false,
+  "EncryptMeetingByDefault": false,
   "Theme": "System",
   "MinimizeToTrayOnClose": true,
   "ShowTrayTimer": true,

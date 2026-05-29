@@ -27,13 +27,18 @@ public class Meeting
     /// </summary>
     public string? AudioFilePaths { get; set; }
 
-    public string? TranscriptFilePath { get; set; }
-
     public string? Transcript { get; set; }
     public string? Summary { get; set; }
     public string? MyNotes { get; set; }
 
     public MeetingStatus Status { get; set; } = MeetingStatus.New;
+
+    // Encryption — transcript, summary, and notes are AES-256-GCM encrypted when true
+    public bool IsEncrypted { get; set; } = false;
+    /// <summary>Base64-encoded 16-byte PBKDF2 salt used to derive the key-encrypting key.</summary>
+    public string? EncryptionSalt { get; set; }
+    /// <summary>Base64-encoded wrapped data key: AES-GCM(nonce + encryptedKey + tag).</summary>
+    public string? EncryptedDataKey { get; set; }
 
     // Soft delete — text stays in DB, only audio files are removed
     public bool IsDeleted { get; set; } = false;

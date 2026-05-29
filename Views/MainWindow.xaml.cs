@@ -11,8 +11,6 @@ public partial class MainWindow : Window
     private bool _sidebarCollapsed;
     private bool _searchVisible;
     private string _folderNameBeforeEdit = string.Empty;
-    // One FolderChatView per folder — preserves chat history when clicking away and back
-    private readonly Dictionary<int, FolderChatView> _folderChatCache = [];
 
     public MainWindow(MainViewModel vm)
     {
@@ -59,7 +57,7 @@ public partial class MainWindow : Window
             MeetingList.ItemsSource = _vm.Meetings;
             NewMeetingButton.Visibility = Visibility.Visible;
             UpdateFolderTitle();
-            ShowFolderChat(folder);
+            ShowEmptyState();
         }
     }
 
@@ -146,8 +144,7 @@ public partial class MainWindow : Window
         MeetingList.ItemsSource = _vm.Meetings;
         NewMeetingButton.Visibility = Visibility.Visible;
         UpdateFolderTitle();
-        if (_vm.SelectedFolder is not null)
-            ShowFolderChat(_vm.SelectedFolder);
+        ShowEmptyState();
     }
 
     private async void NewMeetingButton_Click(object sender, RoutedEventArgs e)
@@ -188,7 +185,6 @@ public partial class MainWindow : Window
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                _folderChatCache.Remove(folder.Id); // drop cached chat for deleted folder
                 await _vm.DeleteFolderAsync(folder);
                 FolderList.ItemsSource = _vm.Folders;
                 MeetingList.ItemsSource = _vm.Meetings;
@@ -378,42 +374,28 @@ public partial class MainWindow : Window
         menu.IsOpen = true;
     }
 
-    private void ShowFolderChat(FolderViewModel folder)
-    {
-        EmptyState.Visibility = Visibility.Collapsed;
-        ContentFrame.Visibility = Visibility.Visible;
-
-        // Reuse existing instance so chat history is preserved when clicking away and back
-        if (!_folderChatCache.TryGetValue(folder.Id, out var page))
-        {
-            page = App.GetService<FolderChatView>();
-            page.SetFolder(folder);
-            _folderChatCache[folder.Id] = page;
-        }
-
-        ContentFrame.Navigate(page);
-    }
-
-    private void ShowMeetingDetail(MeetingViewModel meeting)
+    private MeetingDetailView ShowMeetingDetail(MeetingViewModel meeting)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
         var page = App.GetService<MeetingDetailView>();
         page.LoadMeeting(meeting);
         ContentFrame.Navigate(page);
+        return page;
     }
 
-    public void ShowRecordingView(MeetingViewModel meeting, bool runAI = true)
+    public void ShowRecordingView(MeetingViewModel meeting, bool runAI = true, bool encryptAfter = false)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
         var page = App.GetService<RecordingView>();
-        page.SetMeeting(meeting, _vm.SelectedFolder?.Name ?? string.Empty, runAI);
+        page.SetMeeting(meeting, _vm.SelectedFolder?.Name ?? string.Empty, runAI, encryptAfter);
         page.RecordingStopped += OnRecordingStopped;
         ContentFrame.Navigate(page);
     }
 
-    public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false, bool runAI = true)
+    public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false,
+        bool runAI = true, bool encryptAfter = false)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
@@ -423,19 +405,24 @@ public partial class MainWindow : Window
             await _vm.RefreshMeetingAsync(meeting.Id);
             MeetingList.ItemsSource = _vm.Meetings;
             var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meeting.Id);
-            if (vm is not null) ShowMeetingDetail(vm);
+            if (vm is not null)
+            {
+                var detailPage = ShowMeetingDetail(vm);
+                if (encryptAfter)
+                    await detailPage.EncryptMeetingNowAsync();
+            }
         };
         page.StartProcessing(meetingVm.Id, appendTranscript, runAI);
         ContentFrame.Navigate(page);
     }
 
-    private void OnRecordingStopped(object? sender, (int meetingId, bool runAI) args)
+    private void OnRecordingStopped(object? sender, (int meetingId, bool runAI, bool encryptAfter) args)
     {
         var vm = _vm.Meetings.FirstOrDefault(m => m.Id == args.meetingId);
         if (vm is null) return;
         // If the meeting already had a transcript, this is a re-recording → append
         bool append = !string.IsNullOrWhiteSpace(vm.Transcript);
-        ShowProcessingView(vm, append, args.runAI);
+        ShowProcessingView(vm, append, args.runAI, args.encryptAfter);
     }
 
     private void CollapseListButton_Click(object sender, RoutedEventArgs e)

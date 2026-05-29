@@ -175,7 +175,6 @@ public partial class App : System.Windows.Application
         services.AddTransient<RecordingView>();
         services.AddTransient<ProcessingView>();
         services.AddTransient<SettingsView>();
-        services.AddTransient<FolderChatView>();
 
         return services.BuildServiceProvider();
     }

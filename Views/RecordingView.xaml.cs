@@ -27,8 +27,9 @@ public partial class RecordingView : Page
     private bool _isRecording;
     private readonly double[] _waveformData = new double[40];
 
-    public event EventHandler<(int meetingId, bool runAI)>? RecordingStopped;
+    public event EventHandler<(int meetingId, bool runAI, bool encryptAfter)>? RecordingStopped;
     private bool _runAI = true;
+    private bool _encryptAfter;
 
     public RecordingView(AudioCaptureService audio, DatabaseService db, AppSettings settings)
     {
@@ -41,9 +42,10 @@ public partial class RecordingView : Page
         WaveformDisplay.ItemsSource = _waveformData;
     }
 
-    public async void SetMeeting(MeetingViewModel vm, string folderName, bool runAI = true)
+    public async void SetMeeting(MeetingViewModel vm, string folderName, bool runAI = true, bool encryptAfter = false)
     {
         _runAI = runAI;
+        _encryptAfter = encryptAfter;
         _meetingVm = vm;
         MeetingTitleText.Text = vm.Title;
         FolderBadgeText.Text = $"📁 {folderName}";
@@ -145,7 +147,7 @@ public partial class RecordingView : Page
         await _db.UpdateMeetingAsync(_meeting);
 
         _isRecording = false;
-        RecordingStopped?.Invoke(this, (_meeting.Id, _runAI));
+        RecordingStopped?.Invoke(this, (_meeting.Id, _runAI, _encryptAfter));
     }
 
     private void LoopbackBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)

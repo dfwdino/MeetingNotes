@@ -285,10 +285,16 @@
                     Delete audio file after transcription (saves disk space)
                 </CheckBox>
 
-                <CheckBox x:Name="RunAiByDefaultBox" Margin="0,0,0,12"
+                <CheckBox x:Name="RunAiByDefaultBox" Margin="0,0,0,8"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
                           ToolTip="When checked, AI summarization is enabled by default for each new recording. Can be overridden per meeting.">
                     Run AI summarization by default for new recordings
+                </CheckBox>
+
+                <CheckBox x:Name="EncryptMeetingByDefaultBox" Margin="0,0,0,12"
+                          Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"
+                          ToolTip="When checked, the Encrypt checkbox is pre-checked for each new meeting. The meeting will be encrypted with a password after processing. Audio is always deleted when encrypting.">
+                    Encrypt meetings by default (requires password after each recording)
                 </CheckBox>
 
                 <Grid Margin="0,0,0,16" VerticalAlignment="Center">

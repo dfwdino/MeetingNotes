@@ -22,44 +22,45 @@ public class DatabaseService
         await using var db = await _dbFactory.CreateDbContextAsync();
         await db.Database.EnsureCreatedAsync();
 
-        // Create FolderChatMessages table for existing installs that predate this feature
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(@"
-                CREATE TABLE IF NOT EXISTS FolderChatMessages (
-                    Id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    FolderId  INTEGER NOT NULL,
-                    Role      TEXT NOT NULL,
-                    Content   TEXT NOT NULL,
-                    Timestamp TEXT NOT NULL DEFAULT (datetime('now')),
-                    FOREIGN KEY (FolderId) REFERENCES Folders(Id) ON DELETE CASCADE
-                )");
-        }
-        catch { /* EnsureCreated covers fresh installs */ }
+        // Drop unused tables for existing installs
+        try { await db.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS FolderChatMessages"); } catch { }
+        try { await db.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS AppSettings"); } catch { }
 
-        // Add DefaultMeetingTitle column for existing installs that predate this setting
+        // Add per-meeting encryption columns for existing installs
         try
         {
             await db.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE AppSettings ADD COLUMN DefaultMeetingTitle TEXT NOT NULL DEFAULT 'Meeting'");
+                "ALTER TABLE Meetings ADD COLUMN IsEncrypted INTEGER NOT NULL DEFAULT 0");
         }
-        catch { /* column already exists — sqlite throws, we swallow */ }
+        catch { }
 
-        // Add WhisperBeamSize for existing installs (default 5 = accurate beam search)
         try
         {
             await db.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE AppSettings ADD COLUMN WhisperBeamSize INTEGER NOT NULL DEFAULT 5");
+                "ALTER TABLE Meetings ADD COLUMN EncryptionSalt TEXT");
         }
-        catch { /* column already exists */ }
+        catch { }
 
-        // Add WhisperInitialPrompt for existing installs (empty = no priming)
         try
         {
             await db.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE AppSettings ADD COLUMN WhisperInitialPrompt TEXT NOT NULL DEFAULT ''");
+                "ALTER TABLE Meetings ADD COLUMN EncryptedDataKey TEXT");
         }
-        catch { /* column already exists */ }
+        catch { }
+
+        // Drop unused columns and tables for existing installs
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE Meetings DROP COLUMN TranscriptFilePath");
+        }
+        catch { }
+
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS AppSettings");
+        }
+        catch { }
     }
 
     // ── Folders ──────────────────────────────────────────────────────────
@@ -239,47 +240,4 @@ public class DatabaseService
         return msg;
     }
 
-    // ── Folder Chat ───────────────────────────────────────────────────────
-    public async Task<List<FolderChatMessage>> GetFolderChatMessagesAsync(int folderId)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        return await db.FolderChatMessages
-            .Where(c => c.FolderId == folderId)
-            .OrderBy(c => c.Timestamp)
-            .ToListAsync();
-    }
-
-    public async Task AddFolderChatMessageAsync(int folderId, ChatRole role, string content)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        db.FolderChatMessages.Add(new FolderChatMessage
-        {
-            FolderId = folderId, Role = role, Content = content
-        });
-        await db.SaveChangesAsync();
-    }
-
-    public async Task ClearFolderChatAsync(int folderId)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        var msgs = await db.FolderChatMessages
-            .Where(c => c.FolderId == folderId)
-            .ToListAsync();
-        db.FolderChatMessages.RemoveRange(msgs);
-        await db.SaveChangesAsync();
-    }
-
-    // ── Settings ─────────────────────────────────────────────────────────
-    public async Task<AppSettings> GetSettingsAsync()
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        return await db.Settings.FirstAsync();
-    }
-
-    public async Task SaveSettingsAsync(AppSettings settings)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        db.Settings.Update(settings);
-        await db.SaveChangesAsync();
-    }
 }

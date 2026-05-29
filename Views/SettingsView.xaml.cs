@@ -70,6 +70,7 @@ public partial class SettingsView : Page
 
         DeleteAudioBox.IsChecked = _vm.DeleteAudioAfterTranscription;
         RunAiByDefaultBox.IsChecked = _vm.RunAiByDefault;
+        EncryptMeetingByDefaultBox.IsChecked = _vm.EncryptMeetingByDefault;
         AutoStopBox.IsChecked = _vm.AutoStopOnSilenceEnabled;
         AutoStopMinutesBox.ItemsSource = (string[])["2 minutes", "5 minutes", "10 minutes", "15 minutes", "30 minutes"];
         AutoStopMinutesBox.SelectedIndex = _vm.AutoStopSilenceMinutes switch
@@ -383,6 +384,7 @@ public partial class SettingsView : Page
         };
         _vm.DeleteAudioAfterTranscription = DeleteAudioBox.IsChecked == true;
         _vm.RunAiByDefault = RunAiByDefaultBox.IsChecked == true;
+        _vm.EncryptMeetingByDefault = EncryptMeetingByDefaultBox.IsChecked == true;
         _vm.AutoStopOnSilenceEnabled = AutoStopBox.IsChecked == true;
         _vm.AutoStopSilenceMinutes = AutoStopMinutesBox.SelectedIndex switch
         {

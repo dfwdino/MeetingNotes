@@ -32,7 +32,7 @@
                            VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
-                   
+
                     <Button x:Name="ReprocessButton"
                             Content="↺  Re-process"
                             Style="{DynamicResource GhostButton}"
@@ -45,15 +45,32 @@
                             ToolTip="Export meeting notes, transcript and summary to a text file"
                             Margin="0,0,8,0" Visibility="Collapsed"
                             Click="ExportButton_Click"/>
-                    <CheckBox Grid.Column="1" x:Name="ReprocessRunAICheckBox"
-Content="Use AI" IsChecked="True" Margin="12,0,0,0"
-Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
-ToolTip="When checked, AI summarization will run after recording or re-processing" Width="83"/>
+
+                    <!-- Shown when meeting is NOT encrypted -->
+                    <CheckBox x:Name="EncryptMeetingCheckBox"
+                              Content="🔒 Encrypt" Margin="0,0,4,0"
+                              Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                              ToolTip="Encrypt this meeting's transcript, summary, and notes with a password. The audio file will be permanently deleted."
+                              Checked="EncryptCheckBox_Checked"
+                              Unchecked="EncryptCheckBox_Unchecked"/>
+
+                    <!-- Shown when meeting IS encrypted (replaces the checkbox) -->
+                    <Border x:Name="EncryptedBadge" Visibility="Collapsed"
+                            Background="#FF1A1A2E" BorderBrush="#FF3A3A5A" BorderThickness="1"
+                            CornerRadius="3" Padding="8,4" Margin="0,0,8,0">
+                        <TextBlock x:Name="EncryptedBadgeText" Text="🔒 Encrypted"
+                                   Foreground="#FF8888CC" FontSize="12" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <CheckBox x:Name="ReprocessRunAICheckBox"
+                              Content="Use AI" IsChecked="True" Margin="8,0,0,0"
+                              Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                              ToolTip="When checked, AI summarization will run after recording or re-processing" Width="70"/>
                     <Button x:Name="RecordButton"
                             Content="Record Ready"
                             Style="{DynamicResource DangerButton}"
                             Click="RecordButton_Click"/>
-                    
+
                 </StackPanel>
             </Grid>
         </Border>
@@ -205,6 +222,23 @@ ToolTip="When checked, AI summarization will run after recording or re-processin
                            FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                 <TextBlock Text="Click 'Record New' to start capturing this meeting"
                            Foreground="#FF444444" FontSize="13" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Encrypted overlay — shown instead of tab content when locked -->
+            <StackPanel x:Name="EncryptedOverlay" Visibility="Collapsed"
+                        VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="🔒" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                <TextBlock Text="This meeting is encrypted."
+                           Foreground="#FF8888CC" FontSize="16" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock Text="Enter your password to view the transcript, summary, and notes."
+                           Foreground="#FF666688" FontSize="13" HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+                <Button x:Name="UnlockButton" Content="🔑  Unlock to View"
+                        Style="{DynamicResource PrimaryButton}"
+                        HorizontalAlignment="Center" Padding="24,10"
+                        FontSize="14"
+                        Click="UnlockButton_Click"/>
             </StackPanel>
         </Grid>
     </Grid>

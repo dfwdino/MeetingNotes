@@ -19,6 +19,7 @@ public partial class MeetingViewModel : BaseViewModel
     [ObservableProperty] private bool _isDeleted;
     [ObservableProperty] private DateTime? _deletedDate;
     [ObservableProperty] private string? _audioFilePath;
+    [ObservableProperty] private bool _isEncrypted;
 
     public MeetingViewModel(Meeting meeting)
     {
@@ -34,6 +35,7 @@ public partial class MeetingViewModel : BaseViewModel
         _isDeleted = meeting.IsDeleted;
         _deletedDate = meeting.DeletedDate;
         _audioFilePath = meeting.AudioFilePath;
+        _isEncrypted = meeting.IsEncrypted;
     }
 
     public string AudioFileName => AudioFilePath is not null

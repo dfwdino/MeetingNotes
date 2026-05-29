@@ -8,8 +8,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<MeetingFolder> Folders { get; set; }
     public DbSet<Meeting> Meetings { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
-    public DbSet<FolderChatMessage> FolderChatMessages { get; set; }
-    public DbSet<AppSettings> Settings { get; set; }
     public DbSet<LogEntry> LogEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,14 +32,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(c => c.Role)
             .HasConversion<string>();
 
-        modelBuilder.Entity<FolderChatMessage>()
-            .HasOne(c => c.Folder)
-            .WithMany()
-            .HasForeignKey(c => c.FolderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<FolderChatMessage>()
-            .Property(c => c.Role)
-            .HasConversion<string>();
     }
 }

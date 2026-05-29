@@ -46,6 +46,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private int _mp3Bitrate = 64;
     [ObservableProperty] private bool _deleteAudioAfterTranscription;
     [ObservableProperty] private bool _runAiByDefault;
+    [ObservableProperty] private bool _encryptMeetingByDefault;
     [ObservableProperty] private bool _autoStopOnSilenceEnabled;
     [ObservableProperty] private int _autoStopSilenceMinutes = 5;
     [ObservableProperty] private string _loopbackDeviceId = string.Empty;
@@ -106,6 +107,7 @@ public partial class SettingsViewModel : BaseViewModel
         Mp3Bitrate = s.Mp3Bitrate;
         DeleteAudioAfterTranscription = s.DeleteAudioAfterTranscription;
         RunAiByDefault = s.RunAiByDefault;
+        EncryptMeetingByDefault = s.EncryptMeetingByDefault;
         AutoStopOnSilenceEnabled = s.AutoStopOnSilenceEnabled;
         AutoStopSilenceMinutes = s.AutoStopSilenceMinutes;
         DefaultMeetingTitle = s.DefaultMeetingTitle;
@@ -218,6 +220,7 @@ public partial class SettingsViewModel : BaseViewModel
         _settings.Mp3Bitrate = Mp3Bitrate;
         _settings.DeleteAudioAfterTranscription = DeleteAudioAfterTranscription;
         _settings.RunAiByDefault = RunAiByDefault;
+        _settings.EncryptMeetingByDefault = EncryptMeetingByDefault;
         _settings.AutoStopOnSilenceEnabled = AutoStopOnSilenceEnabled;
         _settings.AutoStopSilenceMinutes = AutoStopSilenceMinutes;
         _settings.DefaultMeetingTitle = DefaultMeetingTitle;
