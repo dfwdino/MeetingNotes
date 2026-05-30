@@ -1,3 +1,4 @@
+using MeetingNotes.Models;
 using MeetingNotes.ViewModels;
 using System.Windows;
 using System.Windows.Input;
@@ -379,9 +380,22 @@ public partial class MainWindow : Window
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
         var page = App.GetService<MeetingDetailView>();
+        page.MeetingSplit += OnMeetingSplit;
         page.LoadMeeting(meeting);
         ContentFrame.Navigate(page);
         return page;
+    }
+
+    private void OnMeetingSplit(object? sender, Meeting newMeeting)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            var vm = new MeetingViewModel(newMeeting);
+            _vm.Meetings.Insert(0, vm);
+            if (_vm.SelectedFolder is not null)
+                _vm.SelectedFolder.MeetingCount++;
+            MeetingList.ItemsSource = _vm.Meetings;
+        });
     }
 
     public void ShowRecordingView(MeetingViewModel meeting, bool runAI = true, bool encryptAfter = false)
@@ -395,24 +409,27 @@ public partial class MainWindow : Window
     }
 
     public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false,
-        bool runAI = true, bool encryptAfter = false)
+        bool runAI = true, bool encryptAfter = false, bool forceTranscribe = false)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
         var page = App.GetService<ProcessingView>();
-        page.ProcessingComplete += async (_, meeting) =>
+        page.ProcessingComplete += (_, meeting) =>
         {
-            await _vm.RefreshMeetingAsync(meeting.Id);
-            MeetingList.ItemsSource = _vm.Meetings;
-            var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meeting.Id);
-            if (vm is not null)
+            _ = Dispatcher.InvokeAsync(async () =>
             {
-                var detailPage = ShowMeetingDetail(vm);
-                if (encryptAfter)
-                    await detailPage.EncryptMeetingNowAsync();
-            }
+                await _vm.RefreshMeetingAsync(meeting.Id);
+                MeetingList.ItemsSource = _vm.Meetings;
+                var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meeting.Id);
+                if (vm is not null)
+                {
+                    var detailPage = ShowMeetingDetail(vm);
+                    if (encryptAfter)
+                        await detailPage.EncryptMeetingNowAsync();
+                }
+            });
         };
-        page.StartProcessing(meetingVm.Id, appendTranscript, runAI);
+        page.StartProcessing(meetingVm.Id, appendTranscript, runAI, forceTranscribe);
         ContentFrame.Navigate(page);
     }
 

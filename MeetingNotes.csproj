@@ -11,9 +11,9 @@
     <!-- Only copy English satellite assemblies — removes the 100+ language folders -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>MeetingNotes.ico</ApplicationIcon>
-    <Version>1.2026.05.28</Version>
-    <AssemblyVersion>1.2026.05.28</AssemblyVersion>
-    <FileVersion>1.2026.05.28</FileVersion>
+    <Version>1.2026.05.30</Version>
+    <AssemblyVersion>1.2026.05.30</AssemblyVersion>
+    <FileVersion>1.2026.05.30</FileVersion>
     <Company>Shane</Company>
     <Product>Meeting Notes</Product>
   </PropertyGroup>

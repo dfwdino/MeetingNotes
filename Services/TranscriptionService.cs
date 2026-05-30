@@ -12,6 +12,7 @@ public class TranscriptionService
     private string? _loadedModelPath;
 
     public event EventHandler<string>? SegmentTranscribed;
+    public event Action<(TimeSpan position, TimeSpan total)>? TranscriptionProgressChanged;
 
     public async Task<string> EnsureModelAsync(string modelType, string cacheFolder,
         IProgress<long>? progress = null)
@@ -64,6 +65,7 @@ public class TranscriptionService
     public async Task<string> TranscribeFileAsync(string audioPath,
         int beamSize = 5,
         string? initialPrompt = null,
+        DateTime? recordingStarted = null,
         CancellationToken cancellationToken = default)
     {
         if (_factory is null) throw new InvalidOperationException("Model not loaded.");
@@ -101,9 +103,11 @@ public class TranscriptionService
             : builder.Build();
 
         // Whisper.net requires 16kHz mono 16-bit PCM WAV; AudioFileReader handles MP3 and WAV.
+        TimeSpan totalDuration;
         var memoryStream = new MemoryStream();
         using (var audioFileReader = new AudioFileReader(audioPath))
         {
+            totalDuration = audioFileReader.TotalTime;
             var mono      = new StereoToMonoSampleProvider(audioFileReader);
             var resampled = new WdlResamplingSampleProvider(mono, 16000);
             WaveFileWriter.WriteWavFileToStream(memoryStream, resampled.ToWaveProvider16());
@@ -116,6 +120,8 @@ public class TranscriptionService
 
             await foreach (var segment in processor.ProcessAsync(memoryStream, cancellationToken))
             {
+                TranscriptionProgressChanged?.Invoke((segment.Start, totalDuration));
+
                 var text = segment.Text.Trim();
                 if (string.IsNullOrWhiteSpace(text)) continue;
 
@@ -146,7 +152,10 @@ public class TranscriptionService
                     ? $"[Low confidence: {text}]"
                     : text;
 
-                var line = $"[{segment.Start:mm\\:ss}] {display}";
+                var timestamp = recordingStarted.HasValue
+                    ? (recordingStarted.Value + segment.Start).ToString("h:mm:ss tt")
+                    : segment.Start.ToString(@"mm\:ss");
+                var line = $"[{timestamp}] {display}";
                 transcript.AppendLine(line);
                 SegmentTranscribed?.Invoke(this, line);
             }

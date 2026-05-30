@@ -31,6 +31,7 @@ public partial class ProcessingViewModel : BaseViewModel
     public event EventHandler<string>? SegmentTranscribed;
     public event EventHandler<string>? StepChanged;
     public event EventHandler<string>? StatusChanged;
+    public event Action<(double progress, string eta)>? TranscriptionProgressUpdated;
 
     public ProcessingViewModel(TranscriptionService transcription, ILlmService llm,
         DatabaseService db, AppSettings settings, AudioCaptureService audio)
@@ -45,10 +46,14 @@ public partial class ProcessingViewModel : BaseViewModel
     /// <param name="appendTranscript">
     /// When true (re-recording on an existing meeting), always transcribe the new audio
     /// and append it to any existing transcript.  When false (first recording or retry),
-    /// transcription is skipped if a transcript already exists.
+    /// transcription is skipped if a transcript already exists unless forceTranscribe is set.
+    /// </param>
+    /// <param name="forceTranscribe">
+    /// When true (user clicked Re-process), always re-transcribe from the audio file if it
+    /// exists, even if the meeting already has a transcript.
     /// </param>
     public async Task ProcessMeetingAsync(Meeting meeting, bool appendTranscript = false,
-        bool runAI = true, CancellationToken cancellationToken = default)
+        bool runAI = true, bool forceTranscribe = false, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -81,7 +86,11 @@ public partial class ProcessingViewModel : BaseViewModel
             // Step 1: Transcribe
             // - appendTranscript=true  → always transcribe new audio and append
             // - appendTranscript=false → skip if transcript already exists (retry path)
-            bool needsTranscription = appendTranscript || string.IsNullOrWhiteSpace(meeting.Transcript);
+            bool audioAvailable = !string.IsNullOrWhiteSpace(meeting.AudioFilePath)
+                && File.Exists(meeting.AudioFilePath);
+            bool needsTranscription = (forceTranscribe && audioAvailable)
+                || appendTranscript
+                || string.IsNullOrWhiteSpace(meeting.Transcript);
 
             // Track just the new portion so the summary covers only fresh content
             string? newPortionText = null;
@@ -94,6 +103,8 @@ public partial class ProcessingViewModel : BaseViewModel
                 StepChanged?.Invoke(this, "transcribing");
                 StatusChanged?.Invoke(this, "Transcribing audio...");
 
+                var transcriptionStart = DateTime.UtcNow;
+
                 EventHandler<string>? segHandler = null;
                 segHandler = (_, line) =>
                 {
@@ -103,7 +114,30 @@ public partial class ProcessingViewModel : BaseViewModel
                         SegmentTranscribed?.Invoke(this, line);
                     });
                 };
+
+                Action<(TimeSpan position, TimeSpan total)>? progressHandler = null;
+                progressHandler = args =>
+                {
+                    if (args.total.TotalSeconds <= 0) return;
+                    var pct = Math.Clamp(args.position.TotalSeconds / args.total.TotalSeconds, 0.0, 1.0);
+                    var elapsed = (DateTime.UtcNow - transcriptionStart).TotalSeconds;
+                    string etaText;
+                    if (pct > 0.02 && elapsed > 1)
+                    {
+                        var remainingSec = elapsed * (1 - pct) / pct;
+                        etaText = remainingSec >= 60
+                            ? $"~{(int)Math.Ceiling(remainingSec / 60)} min remaining"
+                            : $"~{(int)Math.Ceiling(remainingSec)} sec remaining";
+                    }
+                    else
+                    {
+                        etaText = "Estimating...";
+                    }
+                    TranscriptionProgressUpdated?.Invoke((pct, etaText));
+                };
+
                 _transcription.SegmentTranscribed += segHandler;
+                _transcription.TranscriptionProgressChanged += progressHandler;
 
                 string newTranscript;
                 try
@@ -117,11 +151,13 @@ public partial class ProcessingViewModel : BaseViewModel
                         beamSize: _settings.WhisperBeamSize,
                         initialPrompt: string.IsNullOrWhiteSpace(_settings.WhisperInitialPrompt)
                             ? null : _settings.WhisperInitialPrompt,
+                        recordingStarted: meeting.RecordingStarted,
                         cancellationToken);
                 }
                 finally
                 {
                     _transcription.SegmentTranscribed -= segHandler;
+                    _transcription.TranscriptionProgressChanged -= progressHandler;
                 }
 
                 newPortionText = newTranscript;

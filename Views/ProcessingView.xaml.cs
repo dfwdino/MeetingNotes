@@ -22,7 +22,7 @@ public partial class ProcessingView : Page
     private bool _appendTranscript;
     private bool _runAI = true;
 
-    public async void StartProcessing(int meetingId, bool appendTranscript = false, bool runAI = true)
+    public async void StartProcessing(int meetingId, bool appendTranscript = false, bool runAI = true, bool forceTranscribe = false)
     {
         _appendTranscript = appendTranscript;
         _runAI = runAI;
@@ -36,11 +36,19 @@ public partial class ProcessingView : Page
 
         _vm.StepChanged   += (_, step) => Dispatcher.Invoke(() => UpdateStepUI(step));
         _vm.StatusChanged += (_, msg)  => Dispatcher.Invoke(() => StatusText.Text = msg);
+        _vm.TranscriptionProgressUpdated += args =>
+            Dispatcher.Invoke(() =>
+            {
+                TranscribeProgressBar.Visibility = System.Windows.Visibility.Visible;
+                TranscribeEtaText.Visibility     = System.Windows.Visibility.Visible;
+                TranscribeProgressBar.Value      = args.progress;
+                TranscribeEtaText.Text           = args.eta;
+            });
         _vm.ProcessingComplete    += (_, m)   => ProcessingComplete?.Invoke(this, m);
         _vm.ErrorOccurred         += (_, err) => Dispatcher.Invoke(() => ShowError(err.message));
         _vm.WhisperSetupRequired  += (_, m)   => Dispatcher.Invoke(() => HandleWhisperSetup(m));
 
-        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI);
+        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI, forceTranscribe);
     }
 
     private void ShowError(string message)
@@ -107,9 +115,11 @@ public partial class ProcessingView : Page
                     System.Windows.Media.Color.FromRgb(0, 120, 212));
                 break;
             case "transcribed":
-                Step1Check.Visibility = System.Windows.Visibility.Visible;
-                TranscribeStatusText.Text = "Done";
-                TranscribeStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                Step1Check.Visibility            = System.Windows.Visibility.Visible;
+                TranscribeProgressBar.Visibility = System.Windows.Visibility.Collapsed;
+                TranscribeEtaText.Visibility     = System.Windows.Visibility.Collapsed;
+                TranscribeStatusText.Text        = "Done";
+                TranscribeStatusText.Foreground  = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromRgb(76, 175, 80));
                 break;
             case "summarizing":

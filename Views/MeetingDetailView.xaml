@@ -45,6 +45,12 @@
                             ToolTip="Export meeting notes, transcript and summary to a text file"
                             Margin="0,0,8,0" Visibility="Collapsed"
                             Click="ExportButton_Click"/>
+                    <Button x:Name="SplitButton"
+                            Content="✂  Split"
+                            Style="{DynamicResource GhostButton}"
+                            ToolTip="Split this meeting's transcript at a chosen line and create a new meeting with the second half"
+                            Margin="0,0,8,0" Visibility="Collapsed"
+                            Click="SplitButton_Click"/>
 
                     <!-- Shown when meeting is NOT encrypted -->
                     <CheckBox x:Name="EncryptMeetingCheckBox"
@@ -173,10 +179,20 @@
             </Grid>
 
             <!-- Transcript Tab -->
-            <ScrollViewer x:Name="TranscriptPanel" Visibility="Collapsed"
-                          VerticalScrollBarVisibility="Auto" Padding="24,16">
-                <TextBox x:Name="TranscriptText" Style="{StaticResource ReadOnlyContent}"/>
-            </ScrollViewer>
+            <Grid x:Name="TranscriptPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D" Padding="24,5">
+                    <CheckBox x:Name="ShowTimestampsCheck" Content="Show timestamps" IsChecked="True"
+                              Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
+                              Checked="ShowTimestamps_Changed" Unchecked="ShowTimestamps_Changed"/>
+                </Border>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16">
+                    <TextBox x:Name="TranscriptText" Style="{StaticResource ReadOnlyContent}"/>
+                </ScrollViewer>
+            </Grid>
 
             <!-- AI Summary Tab -->
             <ScrollViewer x:Name="SummaryPanel" Visibility="Collapsed"

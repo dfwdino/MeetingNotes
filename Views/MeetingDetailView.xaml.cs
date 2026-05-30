@@ -4,6 +4,7 @@ using MeetingNotes.ViewModels;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -26,11 +27,14 @@ public partial class MeetingDetailView : Page
     private bool _notesChanged;
     private bool _suppressNoteChange;
     private bool _suppressEncryptEvent;
+    private bool _showTimestamps = true;
     private System.Windows.Threading.DispatcherTimer? _saveTimer;
     // Decrypted content held in memory only (never written back to DB)
     private string? _decryptedTranscript;
     private string? _decryptedSummary;
     private string? _decryptedNotes;
+
+    public event EventHandler<Meeting>? MeetingSplit;
 
     public MeetingDetailView(DatabaseService db, ILlmService llm, AppSettings settings)
     {
@@ -62,7 +66,7 @@ public partial class MeetingDetailView : Page
         {
             ShowUnencryptedState(vm);
             LoadRichText(vm.MyNotes);
-            TranscriptText.Text = AddLineSpacing(vm.Transcript);
+            TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(vm.Transcript));
             SummaryText.Text    = AddLineSpacing(vm.Summary);
 
             // Show appropriate default tab
@@ -80,6 +84,7 @@ public partial class MeetingDetailView : Page
         var hasContent = vm.Status != MeetingStatus.New;
         ReprocessButton.Visibility = hasContent && !vm.IsEncrypted ? Visibility.Visible : Visibility.Collapsed;
         ExportButton.Visibility    = hasContent && !vm.IsEncrypted ? Visibility.Visible : Visibility.Collapsed;
+        SplitButton.Visibility     = Visibility.Collapsed;
     }
 
     // ── Encryption state helpers ──────────────────────────────────────────
@@ -234,7 +239,7 @@ public partial class MeetingDetailView : Page
             ShowUnlockedBadge();
 
             LoadRichText(_decryptedNotes);
-            TranscriptText.Text = AddLineSpacing(_decryptedTranscript);
+            TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(_decryptedTranscript));
             SummaryText.Text    = AddLineSpacing(_decryptedSummary);
 
             // Disable editing for notes while unlocked (read-only view)
@@ -287,13 +292,16 @@ public partial class MeetingDetailView : Page
 
     private void SwitchTab(string tab)
     {
-        //_ActiveTab = tab;
-
-        MyNotesPanel.Visibility   = tab == "MyNotes"    ? Visibility.Visible : Visibility.Collapsed;
+        MyNotesPanel.Visibility    = tab == "MyNotes"    ? Visibility.Visible : Visibility.Collapsed;
         TranscriptPanel.Visibility = tab == "Transcript" ? Visibility.Visible : Visibility.Collapsed;
         SummaryPanel.Visibility    = tab == "Summary"    ? Visibility.Visible : Visibility.Collapsed;
         ChatPanel.Visibility       = tab == "Chat"       ? Visibility.Visible : Visibility.Collapsed;
         NewMeetingPanel.Visibility = Visibility.Collapsed;
+
+        var canSplit = tab == "Transcript"
+            && _meetingVm?.IsEncrypted == false
+            && !string.IsNullOrWhiteSpace(_meetingVm?.Transcript);
+        SplitButton.Visibility = canSplit ? Visibility.Visible : Visibility.Collapsed;
 
         // Highlight active tab
         foreach (var btn in new[] { TabMyNotes, TabTranscript, TabSummary, TabChat })
@@ -322,7 +330,7 @@ public partial class MeetingDetailView : Page
         if (_meetingVm is null) return;
         var mainWindow = Window.GetWindow(this) as MainWindow;
         bool runAI = ReprocessRunAICheckBox.IsChecked == true;
-        mainWindow?.ShowProcessingView(_meetingVm, runAI: runAI);
+        mainWindow?.ShowProcessingView(_meetingVm, runAI: runAI, forceTranscribe: true);
     }
 
     private async void ExportButton_Click(object sender, RoutedEventArgs e)
@@ -543,6 +551,68 @@ public partial class MeetingDetailView : Page
         if (string.IsNullOrEmpty(text)) return string.Empty;
         var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         return string.Join("\n\n", lines);
+    }
+
+    // ── Split Meeting ─────────────────────────────────────────────────────
+
+    private async void SplitButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_meetingVm is null || string.IsNullOrWhiteSpace(_meetingVm.Transcript)) return;
+
+        var dialog = new SplitMeetingDialog(_meetingVm.Transcript, _meetingVm.Title)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        var allLines = _meetingVm.Transcript.Split('\n');
+        var idx = dialog.SplitLineIndex;
+
+        var part1 = string.Join('\n', allLines.Take(idx)).TrimEnd();
+        var part2 = string.Join('\n', allLines.Skip(idx)).TrimStart();
+
+        // Update current meeting — keep first half, clear stale summary
+        var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
+        if (meeting is null) return;
+        meeting.Transcript = part1;
+        meeting.Summary    = null;
+        await _db.UpdateMeetingAsync(meeting);
+
+        // Create new meeting in the same folder with the second half
+        var newMeeting = await _db.CreateMeetingAsync(_meetingVm.FolderId, dialog.NewTitle);
+        newMeeting.Transcript    = part2;
+        newMeeting.AudioFilePath = meeting.AudioFilePath;  // shared audio reference
+        newMeeting.Status        = MeetingStatus.Ready;
+        await _db.UpdateMeetingAsync(newMeeting);
+
+        // Refresh current view
+        _meetingVm.Transcript = part1;
+        _meetingVm.Summary    = null;
+        TranscriptText.Text   = AddLineSpacing(ApplyTimestampFilter(part1));
+        SummaryText.Text      = string.Empty;
+
+        MeetingSplit?.Invoke(this, newMeeting);
+
+        System.Windows.MessageBox.Show(
+            $"\"{dialog.NewTitle}\" has been created in the same folder.\n\nYou can move it to another folder by right-clicking it in the meeting list.\n\nBoth meetings may need AI re-summarized.",
+            "Meeting Split Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    // ── Timestamp toggle ──────────────────────────────────────────────────
+
+    private void ShowTimestamps_Changed(object sender, RoutedEventArgs e)
+    {
+        if (TranscriptText is null) return; // fires during XAML init before all named elements exist
+        _showTimestamps = ShowTimestampsCheck.IsChecked == true;
+        var raw = _meetingVm?.IsEncrypted == true ? _decryptedTranscript : _meetingVm?.Transcript;
+        TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(raw));
+    }
+
+    private string? ApplyTimestampFilter(string? text)
+    {
+        if (_showTimestamps || string.IsNullOrEmpty(text)) return text;
+        return string.Join('\n', text.Split('\n')
+            .Select(line => Regex.Replace(line, @"^\[[^\]]+\]\s*", "")));
     }
 
     private UIElement AddChatBubble(string sender, string message, bool isUser)
