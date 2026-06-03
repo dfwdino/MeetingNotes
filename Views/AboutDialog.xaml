@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
         Title="About Meeting Notes"
-        Height="340" Width="420"
+        Height="370" Width="420"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource SidebarBackgroundBrush}"
@@ -40,7 +40,7 @@
         </StackPanel>
 
         <!-- GitHub link -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,32">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
             <TextBlock Text="GitHub: " Foreground="#FF888888"
                        FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center"/>
             <TextBlock VerticalAlignment="Center">
@@ -50,7 +50,22 @@
                     github.com/dfwdino/MeetingNotes
                 </Hyperlink>
             </TextBlock>
+            
         </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,25">
+            <TextBlock Text="Buy Me Coffee: " Foreground="#FF888888"
+FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center"/>
+            <TextBlock VerticalAlignment="Center">
+    
+<Hyperlink x:Name="BuyMeACoffeeLink" RequestNavigate="GitHubLink_RequestNavigate"
+    NavigateUri="https://buymeacoffee.com/nccapps"
+    Foreground="#FF3A9EFF">
+                buymeacoffee.com/nccapps
+    </Hyperlink>
+            </TextBlock>
+        </StackPanel>
+
 
         <!-- Close button -->
         <Button Content="Close" Style="{DynamicResource PrimaryButton}"
