@@ -1,4 +1,5 @@
-<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="nccapps" data-color="#5F7FFF" data-emoji="⏲️"  data-font="Cookie" data-text="Buy me free time" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+<a href="https://www.buymeacoffee.com/nccapps" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 
 Ollama/Lm Stduio is needed and tested with llama3.2b.  All other plugins should be downloaded at first load time.  Whisper.net is used for the transcripting.
 
