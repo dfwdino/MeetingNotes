@@ -24,6 +24,11 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // Prevent WPF's OnLastWindowClose from firing while the setup dialog is open
+        // and no main window exists yet — without this, the app shuts down as soon as
+        // SetupView closes, before MainWindow.Show() is ever called.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         // Load settings FIRST — DB path, audio folder, etc. all come from here
         var settings = SettingsService.Load();
 
@@ -53,10 +58,11 @@ public partial class App : System.Windows.Application
         // Delete log files older than 7 days
         CleanupOldLogFiles(settings.LogFolder);
 
-        // Show main window
+        // Show main window; restore normal shutdown mode so closing it exits the app
         var mainWindow = GetService<MainWindow>();
         SetupTrayIcon(mainWindow, settings);
         mainWindow.Show();
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
 
         // Start the active-window monitor; it self-gates on AppWatcherEnabled each tick
         var monitor = GetService<ActiveWindowMonitor>();
