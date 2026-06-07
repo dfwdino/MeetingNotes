@@ -31,30 +31,29 @@
                            Foreground="#FF666666" FontSize="12"
                            VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 
-                <StackPanel Grid.Column="3" Orientation="Horizontal">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
 
-                    <Button x:Name="ReprocessButton"
-                            Content="↺  Re-process"
-                            Style="{DynamicResource GhostButton}"
-                            ToolTip="Re-run transcription and summary for this meeting"
-                            Margin="0,0,8,0" Visibility="Collapsed"
-                            Click="ReprocessButton_Click"/>
+                    <!-- Export + Split group -->
                     <Button x:Name="ExportButton"
                             Content="⬇  Export"
                             Style="{DynamicResource GhostButton}"
                             ToolTip="Export meeting notes, transcript and summary to a text file"
-                            Margin="0,0,8,0" Visibility="Collapsed"
+                            Margin="0,0,4,0" Visibility="Collapsed"
                             Click="ExportButton_Click"/>
                     <Button x:Name="SplitButton"
                             Content="✂  Split"
                             Style="{DynamicResource GhostButton}"
                             ToolTip="Split this meeting's transcript at a chosen line and create a new meeting with the second half"
-                            Margin="0,0,8,0" Visibility="Collapsed"
+                            Margin="4,0,0,0" Visibility="Collapsed"
                             Click="SplitButton_Click"/>
+
+                    <!-- Separator: Export | Encrypt -->
+                    <Rectangle x:Name="SepAfterExport" Width="1" Height="16"
+                               Fill="#FF3A3A3A" Margin="8,0" Visibility="Collapsed"/>
 
                     <!-- Shown when meeting is NOT encrypted -->
                     <CheckBox x:Name="EncryptMeetingCheckBox"
-                              Content="🔒 Encrypt" Margin="0,0,4,0"
+                              Content="🔒 Encrypt" Margin="0,0,-4,0" Padding="4,0,0,0"
                               Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
                               ToolTip="Encrypt this meeting's transcript, summary, and notes with a password. The audio file will be permanently deleted."
                               Checked="EncryptCheckBox_Checked"
@@ -63,18 +62,35 @@
                     <!-- Shown when meeting IS encrypted (replaces the checkbox) -->
                     <Border x:Name="EncryptedBadge" Visibility="Collapsed"
                             Background="#FF1A1A2E" BorderBrush="#FF3A3A5A" BorderThickness="1"
-                            CornerRadius="3" Padding="8,4" Margin="0,0,8,0">
+                            CornerRadius="3" Padding="8,4">
                         <TextBlock x:Name="EncryptedBadgeText" Text="🔒 Encrypted"
                                    Foreground="#FF8888CC" FontSize="12" VerticalAlignment="Center"/>
                     </Border>
 
-                    <CheckBox x:Name="ReprocessRunAICheckBox"
-                              Content="Use AI" IsChecked="True" Margin="8,0,0,0"
-                              Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
-                              ToolTip="When checked, AI summarization will run after recording or re-processing" Width="70"/>
+                    <!-- Separator: Encrypt | Dropdown + Re-process -->
+                    <Rectangle x:Name="SepAfterEncrypt" Width="1" Height="16"
+                               Fill="#FF3A3A3A" Margin="2,0,8,0" Visibility="Collapsed"/>
+
+                    <ComboBox x:Name="ReprocessModeComboBox"
+                              Width="155" Margin="0,0,8,0"
+                              VerticalContentAlignment="Center" FontSize="12"
+                              Visibility="Collapsed"
+                              ToolTip="What to run when re-processing: AI Only skips re-transcribing and just runs the AI summary on the existing transcript">
+                        <ComboBoxItem Content="AI Only"/>
+                        <ComboBoxItem Content="Transcription Only"/>
+                        <ComboBoxItem Content="Both"/>
+                    </ComboBox>
+                    <Button x:Name="ReprocessButton"
+                            Content="↺  Re-process"
+                            Style="{DynamicResource GhostButton}"
+                            ToolTip="Re-run transcription and summary for this meeting"
+                            Margin="0,0,0,0" Visibility="Collapsed"
+                            Click="ReprocessButton_Click"/>
+
                     <Button x:Name="RecordButton"
                             Content="Record Ready"
                             Style="{DynamicResource DangerButton}"
+                            Margin="12,0,0,0"
                             Click="RecordButton_Click"/>
 
                 </StackPanel>

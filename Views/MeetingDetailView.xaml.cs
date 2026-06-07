@@ -56,7 +56,8 @@ public partial class MeetingDetailView : Page
                             ? vm.DateDisplay
                             : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
 
-        ReprocessRunAICheckBox.IsChecked = _settings.RunAiByDefault;
+        // AI Only=0, Transcription Only=1, Both=2; default tracks RunAiByDefault
+        ReprocessModeComboBox.SelectedIndex = _settings.RunAiByDefault ? 0 : 1;
 
         if (vm.IsEncrypted)
         {
@@ -82,9 +83,13 @@ public partial class MeetingDetailView : Page
             ? Visibility.Visible : Visibility.Collapsed;
 
         var hasContent = vm.Status != MeetingStatus.New;
-        ReprocessButton.Visibility = hasContent && !vm.IsEncrypted ? Visibility.Visible : Visibility.Collapsed;
-        ExportButton.Visibility    = hasContent && !vm.IsEncrypted ? Visibility.Visible : Visibility.Collapsed;
-        SplitButton.Visibility     = Visibility.Collapsed;
+        var showActions = hasContent && !vm.IsEncrypted;
+        ExportButton.Visibility          = showActions ? Visibility.Visible : Visibility.Collapsed;
+        SepAfterExport.Visibility        = showActions ? Visibility.Visible : Visibility.Collapsed;
+        SepAfterEncrypt.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
+        ReprocessModeComboBox.Visibility = showActions ? Visibility.Visible : Visibility.Collapsed;
+        ReprocessButton.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
+        SplitButton.Visibility           = Visibility.Collapsed;
     }
 
     // ── Encryption state helpers ──────────────────────────────────────────
@@ -316,11 +321,22 @@ public partial class MeetingDetailView : Page
         }
     }
 
+    private (bool runAI, bool forceTranscribe) GetReprocessMode()
+    {
+        var label = (ReprocessModeComboBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString();
+        return label switch
+        {
+            "Transcription Only" => (false, true),
+            "Both"               => (true,  true),
+            _                    => (true,  false), // "AI Only" — reuse existing transcript
+        };
+    }
+
     private void RecordButton_Click(object sender, RoutedEventArgs e)
     {
         if (_meetingVm is null) return;
         var mainWindow = Window.GetWindow(this) as MainWindow;
-        bool runAI = ReprocessRunAICheckBox.IsChecked == true;
+        var (runAI, _) = GetReprocessMode();
         bool encryptAfter = EncryptMeetingCheckBox.IsChecked == true;
         mainWindow?.ShowRecordingView(_meetingVm, runAI, encryptAfter);
     }
@@ -329,8 +345,8 @@ public partial class MeetingDetailView : Page
     {
         if (_meetingVm is null) return;
         var mainWindow = Window.GetWindow(this) as MainWindow;
-        bool runAI = ReprocessRunAICheckBox.IsChecked == true;
-        mainWindow?.ShowProcessingView(_meetingVm, runAI: runAI, forceTranscribe: true);
+        var (runAI, forceTranscribe) = GetReprocessMode();
+        mainWindow?.ShowProcessingView(_meetingVm, runAI: runAI, forceTranscribe: forceTranscribe);
     }
 
     private async void ExportButton_Click(object sender, RoutedEventArgs e)
