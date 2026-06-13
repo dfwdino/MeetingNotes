@@ -437,8 +437,9 @@ public partial class MainWindow : Window
     {
         var vm = _vm.Meetings.FirstOrDefault(m => m.Id == args.meetingId);
         if (vm is null) return;
-        // If the meeting already had a transcript, this is a re-recording → append
-        bool append = !string.IsNullOrWhiteSpace(vm.Transcript);
+        // Only append when the existing transcript is real plaintext — not ciphertext from an
+        // encrypted meeting (which would corrupt the transcript if appended to).
+        bool append = !string.IsNullOrWhiteSpace(vm.Transcript) && !vm.IsEncrypted;
         ShowProcessingView(vm, append, args.runAI, args.encryptAfter);
     }
 

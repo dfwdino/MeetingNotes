@@ -167,6 +167,17 @@ public partial class ProcessingViewModel : BaseViewModel
                     ? meeting.Transcript + $"\n\n— Continued — {timestamp}\n\n\n" + newTranscript
                     : $"{timestamp}\n\n\n" + newTranscript;
 
+                // If this was an encrypted meeting the new transcript is plaintext — clear the
+                // encryption so the meeting opens normally. MyNotes was encrypted and cannot
+                // be recovered here; null it so stale ciphertext is not shown.
+                if (meeting.IsEncrypted)
+                {
+                    meeting.IsEncrypted = false;
+                    meeting.EncryptionSalt = null;
+                    meeting.EncryptedDataKey = null;
+                    meeting.MyNotes = null;
+                }
+
                 await _db.UpdateMeetingAsync(meeting);
             }
             else

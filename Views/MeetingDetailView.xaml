@@ -105,7 +105,7 @@
         </Border>
 
         <!-- Tab Bar -->
-        <Border Grid.Row="1" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D">
+        <Border x:Name="TabBar" Grid.Row="1" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D">
             <StackPanel Orientation="Horizontal" Margin="16,0">
                 <Button x:Name="TabMyNotes" Content="My Notes"
                         Click="Tab_Click" Tag="MyNotes">

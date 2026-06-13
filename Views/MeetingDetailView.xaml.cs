@@ -104,6 +104,7 @@ public partial class MeetingDetailView : Page
         EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
         EncryptedBadge.Visibility = Visibility.Visible;
         EncryptedOverlay.Visibility = Visibility.Visible;
+        TabBar.Visibility = Visibility.Collapsed;
         MyNotesPanel.Visibility = Visibility.Collapsed;
         TranscriptPanel.Visibility = Visibility.Collapsed;
         SummaryPanel.Visibility = Visibility.Collapsed;
@@ -118,6 +119,8 @@ public partial class MeetingDetailView : Page
         EncryptMeetingCheckBox.Visibility = Visibility.Visible;
         EncryptedBadge.Visibility = Visibility.Collapsed;
         EncryptedOverlay.Visibility = Visibility.Collapsed;
+        TabBar.Visibility = Visibility.Visible;
+        TabChat.Visibility = Visibility.Visible;
 
         // Set checkbox from setting without triggering the Checked event handler
         _suppressEncryptEvent = true;
@@ -148,11 +151,9 @@ public partial class MeetingDetailView : Page
 
         var confirm = System.Windows.MessageBox.Show(
             "Encrypting this meeting is permanent and cannot be undone.\n\n" +
-            "The audio recording will be permanently deleted.\n\n" +
+            "The audio recording will be permanently deleted and will not be able to be transcribed again.\n\n" +
             "All text content — transcript, summary, notes, and chat history — will be\n" +
             "encrypted and stored securely. You will need your password to view them.\n\n" +
-            "AI re-processing will no longer be available after encrypting.\n" +
-            "If you haven't generated an AI summary yet, cancel and do that first.\n\n" +
             "Continue with encryption?",
             "Encrypt Meeting",
             MessageBoxButton.YesNo,
@@ -274,6 +275,7 @@ public partial class MeetingDetailView : Page
             EncryptedOverlay.Visibility = Visibility.Collapsed;
             EncryptedBadge.Visibility = Visibility.Collapsed;
             EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
+            TabBar.Visibility = Visibility.Visible;
             TabChat.Visibility = Visibility.Visible;
             if (!string.IsNullOrWhiteSpace(_decryptedTranscript))
                 ReSummarizeButton.Visibility = Visibility.Visible;
@@ -284,9 +286,6 @@ public partial class MeetingDetailView : Page
             LoadRichText(_decryptedNotes);
             TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(_decryptedTranscript));
             SummaryText.Text    = AddLineSpacing(_decryptedSummary);
-
-            // Disable editing for notes while unlocked (read-only view)
-            MyNotesBox.IsReadOnly = true;
 
             await LoadDecryptedChatHistoryAsync(_meetingVm.Id, dataKey);
             SwitchTab(string.IsNullOrWhiteSpace(_decryptedSummary) ? "Transcript" : "Summary");
@@ -306,7 +305,7 @@ public partial class MeetingDetailView : Page
     private void ShowUnlockedBadge()
     {
         EncryptedBadge.Visibility = Visibility.Visible;
-        EncryptedBadgeText.Text = "🔓 Unlocked (read-only)";
+        EncryptedBadgeText.Text = "🔓 Unlocked";
 
         // Swap the Unlock button to a Re-lock button
         UnlockButton.Content = "🔒  Re-lock";
@@ -314,8 +313,11 @@ public partial class MeetingDetailView : Page
         UnlockButton.Click += RelockButton_Click;
     }
 
-    private void RelockButton_Click(object sender, RoutedEventArgs e)
+    private async void RelockButton_Click(object sender, RoutedEventArgs e)
     {
+        _saveTimer?.Stop();
+        if (_notesChanged)
+            await AutoSaveAsync();
         if (_meetingVm is not null)
             LoadMeeting(_meetingVm);
     }
@@ -384,13 +386,75 @@ public partial class MeetingDetailView : Page
         };
     }
 
-    private void RecordButton_Click(object sender, RoutedEventArgs e)
+    private async void RecordButton_Click(object sender, RoutedEventArgs e)
     {
         if (_meetingVm is null) return;
+
+        bool wasEncrypted = _meetingVm.IsEncrypted;
+
+        if (wasEncrypted)
+        {
+            if (_dataKey is null)
+            {
+                System.Windows.MessageBox.Show(
+                    "This meeting is encrypted. Please unlock it first so the existing transcript " +
+                    "can be preserved when the new recording is added.",
+                    "Unlock Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            var warn = System.Windows.MessageBox.Show(
+                "This meeting is encrypted.\n\n" +
+                "Adding a new recording will temporarily store the meeting as unencrypted " +
+                "while it is being processed. When processing is complete you will be " +
+                "prompted to set a new password to re-encrypt the entire meeting.\n\n" +
+                "Continue?",
+                "Re-record Encrypted Meeting",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (warn != MessageBoxResult.Yes) return;
+
+            // Write decrypted content to DB as plaintext so the processing pipeline can
+            // append to real text. encryptAfter=true below will re-prompt for a password
+            // once processing finishes.
+            var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
+            if (meeting is not null)
+            {
+                meeting.Title            = _meetingVm.Title;
+                meeting.Transcript       = _decryptedTranscript;
+                meeting.Summary          = _decryptedSummary;
+                meeting.MyNotes          = _decryptedNotes;
+                meeting.IsEncrypted      = false;
+                meeting.EncryptionSalt   = null;
+                meeting.EncryptedDataKey = null;
+                await _db.UpdateMeetingAsync(meeting);
+
+                // Decrypt chat messages in place
+                var chatMessages = await _db.GetChatMessagesAsync(_meetingVm.Id);
+                foreach (var msg in chatMessages)
+                {
+                    try
+                    {
+                        msg.Content = _encryption.DecryptText(msg.Content, _dataKey) ?? string.Empty;
+                        await _db.UpdateChatMessageAsync(msg);
+                    }
+                    catch { }
+                }
+
+                _meetingVm.IsEncrypted = false;
+                _meetingVm.Transcript  = _decryptedTranscript;
+                _meetingVm.Summary     = _decryptedSummary;
+                _meetingVm.MyNotes     = _decryptedNotes;
+            }
+        }
+
         var mainWindow = Window.GetWindow(this) as MainWindow;
         var (runAI, _) = GetReprocessMode();
-        bool encryptAfter = EncryptMeetingCheckBox.IsChecked == true;
-        mainWindow?.ShowRecordingView(_meetingVm, runAI, encryptAfter);
+        // If this was an encrypted meeting, re-encrypt automatically after processing
+        // by passing encryptAfter=true — EncryptMeetingNowAsync will prompt for a new password.
+        mainWindow?.ShowRecordingView(_meetingVm, runAI, encryptAfter: wasEncrypted);
     }
 
     private void ReprocessButton_Click(object sender, RoutedEventArgs e)
@@ -558,8 +622,18 @@ public partial class MeetingDetailView : Page
         var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
         if (meeting is null) return;
         meeting.Title = _meetingVm.Title;
-        meeting.MyNotes = GetRichText();
+        var plainNotes = GetRichText();
+        if (_meetingVm.IsEncrypted && _dataKey is not null)
+        {
+            _decryptedNotes = plainNotes;
+            meeting.MyNotes = _encryption.EncryptText(plainNotes, _dataKey);
+        }
+        else
+        {
+            meeting.MyNotes = plainNotes;
+        }
         await _db.UpdateMeetingAsync(meeting);
+        _meetingVm.MyNotes = meeting.MyNotes;
         _notesChanged = false;
     }
 
@@ -716,7 +790,7 @@ public partial class MeetingDetailView : Page
         finally
         {
             ReSummarizeButton.IsEnabled = true;
-            ReSummarizeButton.Content = "✨  AI Re-summarize";
+            ReSummarizeButton.Content = "AI Re-summarize";
         }
     }
 
