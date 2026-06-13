@@ -3,7 +3,7 @@
 
 Ollama/Lm Stduio is needed and tested with llama3.2b.  All other plugins should be downloaded at first load time.  Whisper.net is used for the transcripting.
 
-<b>Last Updated May 30th 2026 </b>
+<b>Last Updated June 13th 2026 </b>
 
 
 <h1>Screen shots of the app</h1>  
@@ -29,6 +29,9 @@ Now you can pick where the audio and microphone are being used.
 <h4>Encypted message</h3>
 Each meeting will ask you for a password. Not stored in the app.
 <img width="739" height="691" alt="image" src="https://github.com/user-attachments/assets/02c5d403-1912-40d3-8291-d81382f7d693" />
+
+How its stored in the DB.
+<img width="2517" height="464" alt="image" src="https://github.com/user-attachments/assets/719a1aac-90eb-42eb-9d31-e8defb983a09" />
 
 
 <br/>
