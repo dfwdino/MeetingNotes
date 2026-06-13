@@ -2,6 +2,7 @@ using MeetingNotes.Models;
 using MeetingNotes.Services;
 using MeetingNotes.ViewModels;
 using System.IO;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -33,6 +34,7 @@ public partial class MeetingDetailView : Page
     private string? _decryptedTranscript;
     private string? _decryptedSummary;
     private string? _decryptedNotes;
+    private byte[]? _dataKey;
 
     public event EventHandler<Meeting>? MeetingSplit;
 
@@ -51,6 +53,7 @@ public partial class MeetingDetailView : Page
         _decryptedTranscript = null;
         _decryptedSummary = null;
         _decryptedNotes = null;
+        _dataKey = null;
 
         MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
                             ? vm.DateDisplay
@@ -77,7 +80,9 @@ public partial class MeetingDetailView : Page
                 SwitchTab("MyNotes");
         }
 
-        await LoadChatHistoryAsync(vm.Id);
+        // Encrypted meetings: chat is loaded (decrypted) only after the user unlocks
+        if (!vm.IsEncrypted)
+            await LoadChatHistoryAsync(vm.Id);
 
         NewMeetingPanel.Visibility = vm.Status == MeetingStatus.New && !vm.IsEncrypted
             ? Visibility.Visible : Visibility.Collapsed;
@@ -104,6 +109,8 @@ public partial class MeetingDetailView : Page
         SummaryPanel.Visibility = Visibility.Collapsed;
         ChatPanel.Visibility = Visibility.Collapsed;
         NewMeetingPanel.Visibility = Visibility.Collapsed;
+        TabChat.Visibility = Visibility.Collapsed;
+        ReSummarizeButton.Visibility = Visibility.Collapsed;
     }
 
     private void ShowUnencryptedState(MeetingViewModel vm)
@@ -138,6 +145,24 @@ public partial class MeetingDetailView : Page
     public async Task EncryptMeetingNowAsync()
     {
         if (_meetingVm is null) return;
+
+        var confirm = System.Windows.MessageBox.Show(
+            "Encrypting this meeting is permanent and cannot be undone.\n\n" +
+            "The audio recording will be permanently deleted.\n\n" +
+            "All text content — transcript, summary, notes, and chat history — will be\n" +
+            "encrypted and stored securely. You will need your password to view them.\n\n" +
+            "AI re-processing will no longer be available after encrypting.\n" +
+            "If you haven't generated an AI summary yet, cancel and do that first.\n\n" +
+            "Continue with encryption?",
+            "Encrypt Meeting",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+        {
+            EncryptMeetingCheckBox.IsChecked = false;
+            return;
+        }
 
         var dialog = new EncryptPasswordDialog { Owner = Window.GetWindow(this), IsEncryptMode = true };
         if (dialog.ShowDialog() != true)
@@ -176,6 +201,15 @@ public partial class MeetingDetailView : Page
             _meetingVm.Transcript = meeting.Transcript;
             _meetingVm.Summary    = meeting.Summary;
             _meetingVm.MyNotes    = meeting.MyNotes;
+
+            // Encrypt chat messages in place — same dataKey as the rest of the meeting
+            var chatMessages = await _db.GetChatMessagesAsync(_meetingVm.Id);
+            foreach (var chatMsg in chatMessages)
+            {
+                chatMsg.Content = _encryption.EncryptText(chatMsg.Content, dataKey) ?? string.Empty;
+                await _db.UpdateChatMessageAsync(chatMsg);
+            }
+            ChatMessages.Children.Clear();
 
             ShowEncryptedState();
             NewMeetingPanel.Visibility = Visibility.Collapsed;
@@ -230,6 +264,7 @@ public partial class MeetingDetailView : Page
             var kek = _encryption.DeriveKeyFromPassword(dialog.EnteredPassword, salt);
             var wrappedKey = Convert.FromBase64String(meeting.EncryptedDataKey);
             var dataKey = _encryption.UnwrapKey(wrappedKey, kek);
+            _dataKey = dataKey;
 
             _decryptedTranscript = _encryption.DecryptText(meeting.Transcript, dataKey);
             _decryptedSummary    = _encryption.DecryptText(meeting.Summary, dataKey);
@@ -239,6 +274,9 @@ public partial class MeetingDetailView : Page
             EncryptedOverlay.Visibility = Visibility.Collapsed;
             EncryptedBadge.Visibility = Visibility.Collapsed;
             EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
+            TabChat.Visibility = Visibility.Visible;
+            if (!string.IsNullOrWhiteSpace(_decryptedTranscript))
+                ReSummarizeButton.Visibility = Visibility.Visible;
 
             // Show a "locked" badge to remind user content is temporarily decrypted
             ShowUnlockedBadge();
@@ -250,6 +288,7 @@ public partial class MeetingDetailView : Page
             // Disable editing for notes while unlocked (read-only view)
             MyNotesBox.IsReadOnly = true;
 
+            await LoadDecryptedChatHistoryAsync(_meetingVm.Id, dataKey);
             SwitchTab(string.IsNullOrWhiteSpace(_decryptedSummary) ? "Transcript" : "Summary");
         }
         catch (CryptographicException)
@@ -287,6 +326,19 @@ public partial class MeetingDetailView : Page
         var messages = await _db.GetChatMessagesAsync(meetingId);
         foreach (var msg in messages)
             AddChatBubble(msg.Role == ChatRole.User ? "You" : "AI", msg.Content, msg.Role == ChatRole.User);
+    }
+
+    private async Task LoadDecryptedChatHistoryAsync(int meetingId, byte[] dataKey)
+    {
+        ChatMessages.Children.Clear();
+        var messages = await _db.GetChatMessagesAsync(meetingId);
+        foreach (var msg in messages)
+        {
+            string content;
+            try { content = _encryption.DecryptText(msg.Content, dataKey) ?? string.Empty; }
+            catch { content = string.Empty; }
+            AddChatBubble(msg.Role == ChatRole.User ? "You" : "AI", content, msg.Role == ChatRole.User);
+        }
     }
 
     private void Tab_Click(object sender, RoutedEventArgs e)
@@ -529,33 +581,143 @@ public partial class MeetingDetailView : Page
     {
         if (_meetingVm is null || string.IsNullOrWhiteSpace(ChatInputBox.Text)) return;
 
+        // Encrypted meetings require the data key in memory (i.e. the user must have unlocked).
+        if (_meetingVm.IsEncrypted && _dataKey is null)
+        {
+            System.Windows.MessageBox.Show(
+                "Unlock the meeting first to use AI chat.",
+                "Meeting Locked", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Use decrypted transcript in memory — never send ciphertext to the LLM.
+        var transcript = _meetingVm.IsEncrypted
+            ? _decryptedTranscript ?? string.Empty
+            : _meetingVm.Transcript ?? string.Empty;
+
         var userMessage = ChatInputBox.Text.Trim();
         ChatInputBox.Text = string.Empty;
         ChatInputBox.IsEnabled = false;
 
-        await _db.AddChatMessageAsync(_meetingVm.Id, ChatRole.User, userMessage);
-        AddChatBubble("You", userMessage, isUser: true);
+        // Fetch history BEFORE saving the new message so it isn't sent twice.
+        // For encrypted meetings, decrypt each message's content for the LLM.
+        var rawHistory = await _db.GetChatMessagesAsync(_meetingVm.Id);
+        List<(string role, string content)> history;
+        if (_meetingVm.IsEncrypted && _dataKey is not null)
+        {
+            history = [];
+            foreach (var m in rawHistory)
+            {
+                string content;
+                try { content = _encryption.DecryptText(m.Content, _dataKey) ?? string.Empty; }
+                catch { content = string.Empty; }
+                history.Add((m.Role == ChatRole.User ? "user" : "assistant", content));
+            }
+        }
+        else
+        {
+            history = rawHistory
+                .Select(m => (m.Role == ChatRole.User ? "user" : "assistant", m.Content))
+                .ToList();
+        }
 
-        var history = (await _db.GetChatMessagesAsync(_meetingVm.Id))
-            .Select(m => (m.Role == ChatRole.User ? "user" : "assistant", m.Content));
+        // Persist user message — encrypted when the meeting is encrypted.
+        var userToSave = _meetingVm.IsEncrypted && _dataKey is not null
+            ? _encryption.EncryptText(userMessage, _dataKey) ?? userMessage
+            : userMessage;
+        await _db.AddChatMessageAsync(_meetingVm.Id, ChatRole.User, userToSave);
+        AddChatBubble("You", userMessage, isUser: true);
 
         var responseText = string.Empty;
         var responseBubble = AddChatBubble("AI", "...", isUser: false);
 
-        await foreach (var chunk in _llm.ChatAsync(
-            _meetingVm.Transcript ?? string.Empty, history, userMessage))
+        try
         {
-            responseText += chunk;
-            Dispatcher.Invoke(() =>
+            await foreach (var chunk in _llm.ChatAsync(transcript, history, userMessage))
             {
-                if (responseBubble is TextBlock tb) tb.Text = responseText;
-                ChatScrollViewer.ScrollToBottom();
-            });
-        }
+                responseText += chunk;
+                Dispatcher.Invoke(() =>
+                {
+                    if (responseBubble is TextBlock tb) tb.Text = responseText;
+                    ChatScrollViewer.ScrollToBottom();
+                });
+            }
 
-        await _db.AddChatMessageAsync(_meetingVm.Id, ChatRole.Assistant, responseText);
-        ChatInputBox.IsEnabled = true;
-        ChatInputBox.Focus();
+            // Persist AI response — encrypted when the meeting is encrypted.
+            var responseToSave = _meetingVm.IsEncrypted && _dataKey is not null
+                ? _encryption.EncryptText(responseText, _dataKey) ?? responseText
+                : responseText;
+            await _db.AddChatMessageAsync(_meetingVm.Id, ChatRole.Assistant, responseToSave);
+        }
+        catch (OperationCanceledException)
+        {
+            if (responseBubble is TextBlock tb && tb.Text == "...") tb.Text = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            var error = ex is HttpRequestException
+                ? "⚠ Could not reach the AI. Make sure Ollama (or LM Studio) is running and try again."
+                : $"⚠ Error: {ex.Message}";
+            if (responseBubble is TextBlock tb) tb.Text = error;
+        }
+        finally
+        {
+            ChatInputBox.IsEnabled = true;
+            ChatInputBox.Focus();
+        }
+    }
+
+    // ── Re-summarize (encrypted unlocked meetings) ────────────────────────
+
+    private async void ReSummarizeButton_Click(object sender, RoutedEventArgs e) =>
+        await ReSummarizeAsync();
+
+    private async Task ReSummarizeAsync()
+    {
+        if (_meetingVm is null || _dataKey is null || string.IsNullOrWhiteSpace(_decryptedTranscript))
+            return;
+
+        ReSummarizeButton.IsEnabled = false;
+        ReSummarizeButton.Content = "Summarizing...";
+        SwitchTab("Summary");
+        SummaryText.Text = "Generating summary...";
+
+        try
+        {
+            var accumulated = new System.Text.StringBuilder();
+            var summary = await _llm.GenerateSummaryAsync(
+                _decryptedTranscript,
+                _settings.SummaryPrompt,
+                new Progress<string>(chunk =>
+                {
+                    accumulated.Append(chunk);
+                    Dispatcher.Invoke(() => SummaryText.Text = accumulated.ToString());
+                }));
+
+            var timestamp = DateTime.Now.ToString("M/d/yyyy h:mm:ss tt");
+            _decryptedSummary = $"{timestamp}\n\n\n{summary}";
+
+            var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
+            if (meeting is not null)
+            {
+                meeting.Summary = _encryption.EncryptText(_decryptedSummary, _dataKey);
+                await _db.UpdateMeetingAsync(meeting);
+                _meetingVm.Summary = meeting.Summary;
+            }
+
+            SummaryText.Text = AddLineSpacing(_decryptedSummary);
+        }
+        catch (Exception ex)
+        {
+            SummaryText.Text = ex is HttpRequestException
+                ? "⚠ Could not reach the AI. Make sure Ollama (or LM Studio) is running and try again."
+                : $"⚠ Summarization failed: {ex.Message}";
+        }
+        finally
+        {
+            ReSummarizeButton.IsEnabled = true;
+            ReSummarizeButton.Content = "✨  AI Re-summarize";
+        }
     }
 
     /// <summary>

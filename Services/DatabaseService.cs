@@ -240,4 +240,11 @@ public class DatabaseService
         return msg;
     }
 
+    public async Task UpdateChatMessageAsync(ChatMessage msg)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        db.ChatMessages.Update(msg);
+        await db.SaveChangesAsync();
+    }
+
 }

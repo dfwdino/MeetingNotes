@@ -148,7 +148,20 @@ public class LocalLlmService : ILlmService
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
+            string? line;
+            try
+            {
+                line = await reader.ReadLineAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                break; // connection dropped mid-stream; end the enumeration cleanly
+            }
+
             if (line is null) break;
             if (!line.StartsWith("data: ")) continue;
             var data = line["data: ".Length..];

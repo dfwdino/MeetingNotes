@@ -87,6 +87,13 @@
                             Margin="0,0,0,0" Visibility="Collapsed"
                             Click="ReprocessButton_Click"/>
 
+                    <Button x:Name="ReSummarizeButton"
+                            Content="✨  AI Re-summarize"
+                            Style="{DynamicResource GhostButton}"
+                            ToolTip="Re-generate the AI summary using the unlocked transcript"
+                            Margin="4,0,0,0" Visibility="Collapsed"
+                            Click="ReSummarizeButton_Click"/>
+
                     <Button x:Name="RecordButton"
                             Content="Record Ready"
                             Style="{DynamicResource DangerButton}"
