@@ -148,7 +148,7 @@ public partial class SettingsView : Page
             OllamaStatusText.Text = _vm.OllamaStatus;
             OllamaStatusText.Foreground = new SolidColorBrush(
                 _vm.OllamaConnected
-                    ? WpfColor.FromRgb(76, 175, 80)
+                    ? WpfColor.FromRgb(255, 255, 255)
                     : WpfColor.FromRgb(196, 43, 28));
         }
 
@@ -219,7 +219,7 @@ public partial class SettingsView : Page
         else if (isInstalled)
         {
             DefaultModelStatus.Text = "✓ Installed";
-            DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            DefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(255, 255, 255));
             DefaultModelWarning.Visibility = Visibility.Collapsed;
         }
         else
@@ -255,7 +255,7 @@ public partial class SettingsView : Page
             LmStudioStatusText.Text = _vm.LmStudioStatus;
             LmStudioStatusText.Foreground = new SolidColorBrush(
                 _vm.LmStudioConnected
-                    ? WpfColor.FromRgb(76, 175, 80)
+                    ? WpfColor.FromRgb(255, 255, 255)
                     : WpfColor.FromRgb(196, 43, 28));
         }
 
@@ -298,7 +298,7 @@ public partial class SettingsView : Page
         else if (!modelsKnown || _vm.LmStudioAvailableModels.Contains(_vm.LmStudioDefaultModel))
         {
             LmStudioDefaultModelStatus.Text = hasModel ? "✓ Selected" : string.Empty;
-            LmStudioDefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            LmStudioDefaultModelStatus.Foreground = new SolidColorBrush(WpfColor.FromRgb(255, 255, 255));
         }
         else
         {
@@ -324,6 +324,73 @@ public partial class SettingsView : Page
         ModelDownloadWarning.Visibility = System.IO.File.Exists(modelPath)
             ? Visibility.Collapsed
             : Visibility.Visible;
+    }
+
+    private async void ExportAll_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Select export destination folder",
+            UseDescriptionForTitle = true
+        };
+
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+
+        ExportAllButton.IsEnabled = false;
+        ExportStatusText.Visibility = Visibility.Collapsed;
+        ExportProgressBar.Value = 0;
+        ExportProgressBar.Maximum = 1;
+        ExportProgressBar.Visibility = Visibility.Visible;
+        ExportProgressText.Text = "Starting export...";
+        ExportProgressText.Visibility = Visibility.Visible;
+
+        var progress = new Progress<(int Current, int Total)>(p =>
+        {
+            ExportProgressBar.Maximum = p.Total;
+            ExportProgressBar.Value = p.Current;
+            ExportProgressText.Text = $"Exporting {p.Current} of {p.Total} meetings...";
+        });
+
+        try
+        {
+            var (exported, passwordProtected) = await _vm.ExportAllMeetingsAsync(dialog.SelectedPath, progress);
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"✓  {exported} meeting(s) exported to: {dialog.SelectedPath}");
+
+            if (passwordProtected.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine();
+                sb.Append($"🔒  {passwordProtected.Count} meeting(s) are password-protected — open in a browser and enter the original password to view:");
+                foreach (var name in passwordProtected)
+                    sb.Append($"\n    • {name}");
+            }
+
+            ExportProgressBar.Visibility = Visibility.Collapsed;
+            ExportProgressText.Visibility = Visibility.Collapsed;
+
+            ExportStatusText.Text = sb.ToString();
+            ExportStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(255, 255, 255));
+            ExportStatusText.Visibility = Visibility.Visible;
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.SelectedPath)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            ExportProgressBar.Visibility = Visibility.Collapsed;
+            ExportProgressText.Visibility = Visibility.Collapsed;
+            ExportStatusText.Text = $"✗  Export failed: {ex.Message}";
+            ExportStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(196, 43, 28));
+            ExportStatusText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            ExportAllButton.IsEnabled = true;
+        }
     }
 
     private void BrowseRecordingsFolder_Click(object sender, RoutedEventArgs e)
@@ -413,7 +480,7 @@ public partial class SettingsView : Page
         {
             await _vm.SaveAsync();
             App.ApplyTheme(_vm.Theme);
-            SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(76, 175, 80));
+            SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(255, 255, 255));
             SaveStatusText.Text = "✓  Settings saved";
         }
         catch (Exception ex)

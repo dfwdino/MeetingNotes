@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using MeetingNotes.Models;
 using MeetingNotes.Services;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace MeetingNotes.ViewModels;
@@ -10,6 +12,7 @@ namespace MeetingNotes.ViewModels;
 public partial class SettingsViewModel : BaseViewModel
 {
     private readonly LocalLlmService _llm;
+    private readonly DatabaseService _db;
     private AppSettings _settings;
 
     // Whisper
@@ -73,6 +76,9 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private bool _logToFile;
     [ObservableProperty] private string _logFolder = string.Empty;
 
+    // Export
+    [ObservableProperty] private bool _isExporting = false;
+
     public string[] WhisperModels { get; } = ["Tiny", "Base", "Small", "Medium", "Large"];
     public string[] AudioFormats { get; } = ["MP3", "WAV"];
     public int[] Mp3Bitrates { get; } = [32, 64, 128];
@@ -80,10 +86,11 @@ public partial class SettingsViewModel : BaseViewModel
     public string[] Themes { get; } = ["Dark", "Light", "System"];
     public string[] LlmProviders { get; } = ["Ollama", "LM Studio"];
 
-    public SettingsViewModel(LocalLlmService llm, AppSettings settings)
+    public SettingsViewModel(LocalLlmService llm, AppSettings settings, DatabaseService db)
     {
         _llm = llm;
         _settings = settings;
+        _db = db;
         LoadFromSettings(settings);
         AvailableLoopbackDevices = AudioCaptureService.GetLoopbackDevices();
         AvailableMicDevices      = AudioCaptureService.GetMicDevices();
@@ -239,5 +246,74 @@ public partial class SettingsViewModel : BaseViewModel
 
         SettingsService.Save(_settings);
         return Task.CompletedTask;
+    }
+
+    public async Task<(int Exported, List<string> PasswordProtected)> ExportAllMeetingsAsync(
+        string destinationFolder, IProgress<(int Current, int Total)>? progress = null)
+    {
+        IsExporting = true;
+        try
+        {
+            var folders = await _db.GetFoldersAsync();
+            int exported = 0;
+            var passwordProtected = new List<string>();
+            var allMeetings = folders.SelectMany(f => f.Meetings.Where(m => !m.IsDeleted)).ToList();
+            int total = allMeetings.Count;
+            int done = 0;
+
+            foreach (var folder in folders)
+            {
+                var meetings = folder.Meetings.Where(m => !m.IsDeleted).ToList();
+                if (meetings.Count == 0) continue;
+
+                var folderPath = Path.Combine(destinationFolder, MeetingHtmlBuilder.SanitizeName(folder.Name));
+                Directory.CreateDirectory(folderPath);
+
+                foreach (var meeting in meetings)
+                {
+                    var safeName = MeetingHtmlBuilder.SanitizeName(meeting.Title);
+                    string html;
+
+                    if (meeting.IsEncrypted)
+                    {
+                        html = MeetingHtmlBuilder.BuildEncrypted(
+                            meeting.Title, meeting.CreatedDate, meeting.DurationDisplay,
+                            meeting.EncryptionSalt!, meeting.EncryptedDataKey!,
+                            meeting.MyNotes, meeting.Summary, meeting.Transcript);
+                        passwordProtected.Add($"{folder.Name} / {meeting.Title}");
+                    }
+                    else
+                    {
+                        string? audioFileName = null;
+                        if (!string.IsNullOrWhiteSpace(meeting.AudioFilePath) && File.Exists(meeting.AudioFilePath))
+                            audioFileName = $"{safeName}_{meeting.CreatedDate:yyyyMMdd}_{meeting.Id}{Path.GetExtension(meeting.AudioFilePath)}";
+
+                        var plainNotes = MeetingHtmlBuilder.ExtractPlainTextFromRtf(meeting.MyNotes);
+                        html = MeetingHtmlBuilder.BuildPlain(
+                            meeting.Title, meeting.CreatedDate, meeting.DurationDisplay,
+                            audioFileName, plainNotes, meeting.Summary, meeting.Transcript);
+
+                        if (audioFileName is not null)
+                        {
+                            await using var src = File.OpenRead(meeting.AudioFilePath!);
+                            await using var dst = File.Create(Path.Combine(folderPath, audioFileName));
+                            await src.CopyToAsync(dst);
+                        }
+                    }
+
+                    var fileName = $"{safeName}_{meeting.CreatedDate:yyyyMMdd}_{meeting.Id}.html";
+                    await File.WriteAllTextAsync(Path.Combine(folderPath, fileName), html, Encoding.UTF8);
+                    exported++;
+                    done++;
+                    progress?.Report((done, total));
+                }
+            }
+
+            return (exported, passwordProtected);
+        }
+        finally
+        {
+            IsExporting = false;
+        }
     }
 }

@@ -23,7 +23,7 @@
 
                 <!-- ── WHISPER ─────────────────────────────────── -->
                 <TextBlock Text="WHISPER  (Transcription)" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
@@ -259,7 +259,7 @@
 
                 <!-- ── RECORDING ──────────────────────────────── -->
                 <TextBlock Text="RECORDING" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
@@ -332,7 +332,7 @@
 
                 <!-- ── AUDIO DEVICES ─────────────────────────────── -->
                 <TextBlock Text="AUDIO DEVICES" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                           FontSize="22" Margin="0,0,0,8"/>
 
                 <TextBlock Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
                            Margin="0,0,0,12" TextWrapping="Wrap">
@@ -365,7 +365,7 @@
 
                 <!-- ── STORAGE ─────────────────────────────────── -->
                 <TextBlock Text="STORAGE" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock FontWeight="Bold" Text="Recordings folder" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
@@ -382,9 +382,40 @@
 
                 <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
 
+                <!-- ── EXPORT ─────────────────────────────────── -->
+                <TextBlock Text="EXPORT" Foreground="#FF0078D4"
+                           FontSize="22" Margin="0,0,0,12"/>
+
+                <TextBlock Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap">
+                    Export all meetings to text files, organized into folders that match your meeting folders.
+                    Each meeting becomes its own file. Audio files are copied alongside if present.
+                    Encrypted meetings cannot be exported and will be noted in the summary after export.
+                </TextBlock>
+
+                <Button x:Name="ExportAllButton" Content="Export All Meetings..."
+                        Style="{DynamicResource GhostButton}"
+                        HorizontalAlignment="Left" Margin="0,0,0,10"
+                        Click="ExportAll_Click"/>
+
+                <ProgressBar x:Name="ExportProgressBar"
+                             Height="4" Margin="0,0,0,6"
+                             Minimum="0" Maximum="1" Value="0"
+                             Foreground="#FF0078D4" Background="#FF2D2D2D"
+                             BorderThickness="0" Visibility="Collapsed"/>
+
+                <TextBlock x:Name="ExportProgressText"
+                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                           Margin="0,0,0,8" Visibility="Collapsed"/>
+
+                <TextBlock x:Name="ExportStatusText" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Margin="0,0,0,20" Visibility="Collapsed"/>
+
+                <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,20"/>
+
                 <!-- ── GENERAL ─────────────────────────────────── -->
                 <TextBlock Text="GENERAL" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock FontWeight="Bold" Text="Theme" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,6"/>
@@ -406,7 +437,7 @@
 
                 <!-- ── APP WATCHER ────────────────────────────── -->
                 <TextBlock Text="APP WATCHER" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <CheckBox x:Name="AppWatcherEnabledBox" Margin="0,0,0,14"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
@@ -430,7 +461,7 @@
 
                 <!-- ── LOGGING ────────────────────────────────── -->
                 <TextBlock  Text="LOGGING" Foreground="#FF0078D4"
-                           FontSize="11" FontWeight="Bold" Margin="0,0,0,12"/>
+                           FontSize="22" Margin="0,0,0,12"/>
 
                 <CheckBox x:Name="LogToDatabaseBox" Margin="0,0,0,10"
                           Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13">
