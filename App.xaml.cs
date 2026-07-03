@@ -32,14 +32,9 @@ public partial class App : System.Windows.Application
         // Load settings FIRST — DB path, audio folder, etc. all come from here
         var settings = SettingsService.Load();
 
-        // Choose Whisper runtimes before any model load: GPU (Vulkan) first with CPU
-        // fallback, or CPU-only when disabled. Must run before WhisperFactory is created.
-        Whisper.net.LibraryLoader.RuntimeOptions.RuntimeLibraryOrder = settings.WhisperUseGpu
-            ? [Whisper.net.LibraryLoader.RuntimeLibrary.Vulkan,
-               Whisper.net.LibraryLoader.RuntimeLibrary.Cpu,
-               Whisper.net.LibraryLoader.RuntimeLibrary.CpuNoAvx]
-            : [Whisper.net.LibraryLoader.RuntimeLibrary.Cpu,
-               Whisper.net.LibraryLoader.RuntimeLibrary.CpuNoAvx];
+        // Transcription is CPU-only on purpose: the Vulkan GPU runtime was tried (2026-07)
+        // and hard-hung the GPU/driver on real hardware during transcription. Do not
+        // re-add Whisper.net.Runtime.Vulkan — its mere presence makes Whisper try the GPU.
 
         // Apply theme before any UI is created so everything starts correctly
         ApplyTheme(settings.Theme);
@@ -60,11 +55,6 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-
-        // Record which native runtime Whisper actually picked (Vulkan GPU vs CPU fallback)
-        _ = GetService<IAppLogger>().InfoAsync(
-            $"Whisper runtime loaded: {Whisper.net.LibraryLoader.RuntimeOptions.LoadedLibrary}",
-            nameof(App));
 
         // Clean up any orphaned temp audio files left by a previous crash or force-close
         CleanupOrphanedTempFiles(settings.RecordingsFolder);

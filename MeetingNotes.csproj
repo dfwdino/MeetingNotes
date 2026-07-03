@@ -11,9 +11,9 @@
     <!-- Only copy English satellite assemblies — removes the 100+ language folders -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>MeetingNotes.ico</ApplicationIcon>
-    <Version>1.2026.07.02</Version>
-    <AssemblyVersion>1.2026.07.02</AssemblyVersion>
-    <FileVersion>1.2026.07.02</FileVersion>
+    <Version>1.2026.07.04</Version>
+    <AssemblyVersion>1.2026.07.04</AssemblyVersion>
+    <FileVersion>1.2026.07.04</FileVersion>
     <Company>Shane</Company>
     <Product>Meeting Notes</Product>
   </PropertyGroup>
@@ -52,7 +52,6 @@
 <PackageReference Include="Whisper.net" Version="1.9.0" />
     <PackageReference Include="Whisper.net.Runtime" Version="1.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
-    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.0" />
   </ItemGroup>
 
 </Project>

@@ -22,12 +22,6 @@ public class AppSettings
     /// output toward words it is likely to encounter (e.g. "Alice, Bob, JIRA, API gateway").
     /// </summary>
     public string WhisperInitialPrompt { get; set; } = string.Empty;
-    /// <summary>
-    /// When true, Whisper tries the Vulkan GPU runtime first and falls back to CPU
-    /// automatically if no compatible GPU/driver is found. Set false to force CPU.
-    /// Takes effect on next app start.
-    /// </summary>
-    public bool WhisperUseGpu { get; set; } = true;
 
     // AI Provider
     public string LlmProvider { get; set; } = "Ollama"; // "Ollama" or "LmStudio"
