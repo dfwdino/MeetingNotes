@@ -42,14 +42,22 @@ public partial class RecordingView : Page
         WaveformDisplay.ItemsSource = _waveformData;
     }
 
-    public async void SetMeeting(MeetingViewModel vm, string folderName, bool runAI = true, bool encryptAfter = false)
+    // Tracks the async meeting/device load kicked off by SetMeeting so callers that
+    // auto-start (global hotkey) can await it instead of racing a null _meeting.
+    private Task _meetingLoadTask = Task.CompletedTask;
+
+    public void SetMeeting(MeetingViewModel vm, string folderName, bool runAI = true, bool encryptAfter = false)
     {
         _runAI = runAI;
         _encryptAfter = encryptAfter;
         _meetingVm = vm;
         MeetingTitleText.Text = vm.Title;
         FolderBadgeText.Text = $"📁 {folderName}";
+        _meetingLoadTask = LoadMeetingAndDevicesAsync(vm);
+    }
 
+    private async Task LoadMeetingAndDevicesAsync(MeetingViewModel vm)
+    {
         _meeting = await _db.GetMeetingAsync(vm.Id);
 
         var loopbackDevices = AudioCaptureService.GetLoopbackDevices();
@@ -66,9 +74,17 @@ public partial class RecordingView : Page
             ?? micDevices.First();
     }
 
-    private async void StartButton_Click(object sender, RoutedEventArgs e)
+    private async void StartButton_Click(object sender, RoutedEventArgs e) =>
+        await StartImmediatelyAsync();
+
+    /// <summary>
+    /// Starts recording with the currently selected (default) devices.
+    /// Used by the Start button and by the global record hotkey.
+    /// </summary>
+    public async Task StartImmediatelyAsync()
     {
-        if (_meeting is null) return;
+        await _meetingLoadTask;
+        if (_isRecording || _meeting is null) return;
 
         StartButton.IsEnabled = false;
 
@@ -81,6 +97,9 @@ public partial class RecordingView : Page
 
         await StartRecordingAsync(loopbackId, micId);
     }
+
+    /// <summary>Stops the active recording — same path as the Stop button (hotkey entry point).</summary>
+    public Task StopRecordingExternallyAsync() => DoStopAsync();
 
     private async Task StartRecordingAsync(string? loopbackDeviceId = null, string? micDeviceId = null)
     {

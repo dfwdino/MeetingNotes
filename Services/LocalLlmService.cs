@@ -67,17 +67,66 @@ public class LocalLlmService : ILlmService
     public bool IsConfigured() =>
         !string.IsNullOrWhiteSpace(_serverUrl) && !string.IsNullOrWhiteSpace(_model);
 
+    // Local servers default to a small context window (Ollama ≈ 4k tokens ≈ 16k chars) and
+    // silently truncate anything beyond it, so a long meeting's summary would only cover the
+    // start. Transcripts over the single-pass limit are summarized per section, then merged.
+    private const int MaxSinglePassChars = 12_000;
+    private const int SectionTargetChars = 10_000;
+
     public async Task<string> GenerateSummaryAsync(string transcript, string promptTemplate,
         IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
+        if (transcript.Length <= MaxSinglePassChars)
+            return await RunSummaryPassAsync(promptTemplate + transcript, progress, cancellationToken);
+
+        var sections = SplitAtLineBoundaries(transcript, SectionTargetChars);
+        var sectionSummaries = new List<string>();
+        for (int i = 0; i < sections.Count; i++)
+        {
+            var header = $"(This is section {i + 1} of {sections.Count} of a longer meeting.)\n";
+            sectionSummaries.Add(await RunSummaryPassAsync(
+                promptTemplate + header + sections[i], progress: null, cancellationToken));
+        }
+
+        var combined = string.Join("\n\n", sectionSummaries.Select(
+            (s, i) => $"--- Summary of section {i + 1} ---\n{s}"));
+        var mergePrompt =
+            "The following are AI-generated summaries of consecutive sections of ONE meeting, " +
+            "in chronological order. Merge them into a single cohesive summary with the same " +
+            "structure, combining duplicate action items, decisions, and follow-ups. " +
+            "Do not mention sections or that this was merged.\n\n" + combined;
+        return await RunSummaryPassAsync(mergePrompt, progress, cancellationToken);
+    }
+
+    private async Task<string> RunSummaryPassAsync(string prompt,
+        IProgress<string>? progress, CancellationToken cancellationToken)
+    {
         var result = new StringBuilder();
         await foreach (var chunk in StreamChatAsync(
-            [new ChatMessage("user", promptTemplate + transcript)], cancellationToken))
+            [new ChatMessage("user", prompt)], cancellationToken))
         {
             result.Append(chunk);
             progress?.Report(chunk);
         }
         return result.ToString();
+    }
+
+    private static List<string> SplitAtLineBoundaries(string text, int targetChars)
+    {
+        List<string> sections = [];
+        var current = new StringBuilder();
+        foreach (var line in text.Split('\n'))
+        {
+            if (current.Length > 0 && current.Length + line.Length + 1 > targetChars)
+            {
+                sections.Add(current.ToString());
+                current.Clear();
+            }
+            current.Append(line).Append('\n');
+        }
+        if (current.Length > 0)
+            sections.Add(current.ToString());
+        return sections;
     }
 
     public async IAsyncEnumerable<string> ChatAsync(string transcript,

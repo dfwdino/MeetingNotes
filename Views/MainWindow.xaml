@@ -365,7 +365,7 @@
             <Border x:Name="SearchRow" Grid.Row="1" Margin="12,0,12,10"
                     Visibility="Collapsed">
                 <TextBox x:Name="SearchBox" Style="{DynamicResource DarkTextBox}"
-                         ui:ControlHelper.PlaceholderText="Search meetings..."
+                         ui:ControlHelper.PlaceholderText="Search all meetings — titles, transcripts, notes..."
                          TextChanged="SearchBox_TextChanged"/>
             </Border>
 

@@ -110,7 +110,12 @@ public partial class ProcessingViewModel : BaseViewModel
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        LiveTranscriptPreview = line + "\n" + LiveTranscriptPreview;
+                        // Newest line on top; cap the preview so long meetings don't
+                        // rebuild an ever-growing string on the UI thread per segment.
+                        var preview = line + "\n" + LiveTranscriptPreview;
+                        LiveTranscriptPreview = preview.Length <= 8000
+                            ? preview
+                            : preview[..8000];
                         SegmentTranscribed?.Invoke(this, line);
                     });
                 };
@@ -250,10 +255,10 @@ public partial class ProcessingViewModel : BaseViewModel
             SummarizingStatus = "In progress";
             StatusChanged?.Invoke(this, "Generating summary...");
 
+            StatusMessage = "Summarizing...";
             var summary = await _llm.GenerateSummaryAsync(
                 textToSummarize, _settings.SummaryPrompt,
-                new Progress<string>(chunk =>
-                    App.Current.Dispatcher.Invoke(() => StatusMessage = "Summarizing...")),
+                progress: null,
                 cancellationToken);
 
             // Preserve original summary when appending; replace it on first run or re-process

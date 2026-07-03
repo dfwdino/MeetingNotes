@@ -75,7 +75,7 @@
                               Width="155" Margin="0,0,8,0"
                               VerticalContentAlignment="Center" FontSize="12"
                               Visibility="Collapsed"
-                              ToolTip="What to run when re-processing: AI Only skips re-transcribing and just runs the AI summary on the existing transcript">
+                              ToolTip="What to run after recording or when re-processing. New recordings are always transcribed; pick AI Only or Both to also generate the AI summary. When re-processing, AI Only reuses the existing transcript.">
                         <ComboBoxItem Content="AI Only"/>
                         <ComboBoxItem Content="Transcription Only"/>
                         <ComboBoxItem Content="Both"/>

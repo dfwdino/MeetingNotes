@@ -27,9 +27,9 @@ public partial class MainViewModel : BaseViewModel
     public async Task LoadAsync()
     {
         IsLoading = true;
-        var folders = await _db.GetFoldersAsync();
+        var folders = await _db.GetFolderListAsync();
         Folders = new ObservableCollection<FolderViewModel>(
-            folders.Select(f => new FolderViewModel(f)));
+            folders.Select(f => new FolderViewModel(f.Folder, f.MeetingCount)));
 
         if (Folders.Count > 0)
             await SelectFolderAsync(Folders[0]);
@@ -52,7 +52,7 @@ public partial class MainViewModel : BaseViewModel
     public async Task<FolderViewModel> CreateFolderAsync(string name)
     {
         var folder = await _db.CreateFolderAsync(name);
-        var vm = new FolderViewModel(folder);
+        var vm = new FolderViewModel(folder, meetingCount: 0);
         Folders.Add(vm);
         return vm;
     }
@@ -175,9 +175,9 @@ public partial class MainViewModel : BaseViewModel
 
     public async Task UpdateFolderCountAsync(int folderId)
     {
-        var meetings = await _db.GetMeetingsForFolderAsync(folderId);
+        var count = await _db.GetMeetingCountAsync(folderId);
         var folder = Folders.FirstOrDefault(f => f.Id == folderId);
         if (folder is not null)
-            folder.MeetingCount = meetings.Count;
+            folder.MeetingCount = count;
     }
 }

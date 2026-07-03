@@ -64,6 +64,11 @@ public class DatabaseService
     }
 
     // ── Folders ──────────────────────────────────────────────────────────
+    /// <summary>
+    /// Full folder load INCLUDING every meeting's transcript/summary/notes.
+    /// Only use when full content is actually needed (e.g. export-all);
+    /// the sidebar uses <see cref="GetFolderListAsync"/> instead.
+    /// </summary>
     public async Task<List<MeetingFolder>> GetFoldersAsync()
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
@@ -71,6 +76,36 @@ public class DatabaseService
             .OrderBy(f => f.Name)
             .Include(f => f.Meetings.Where(m => !m.IsDeleted))
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Lightweight folder list for the sidebar: folders plus meeting counts,
+    /// without pulling any meeting rows (or their large text columns) into memory.
+    /// </summary>
+    public async Task<List<(MeetingFolder Folder, int MeetingCount)>> GetFolderListAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var rows = await db.Folders
+            .OrderBy(f => f.Name)
+            .Select(f => new
+            {
+                Folder = f,
+                Count = f.Meetings.Count(m => !m.IsDeleted)
+            })
+            .ToListAsync();
+        return rows.Select(r => (r.Folder, r.Count)).ToList();
+    }
+
+    public async Task<int> GetMeetingCountAsync(int folderId)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings.CountAsync(m => m.FolderId == folderId && !m.IsDeleted);
+    }
+
+    public async Task<int> GetTrashCountAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.Meetings.CountAsync(m => m.IsDeleted && !m.IsHiddenFromTrash);
     }
 
     public async Task<MeetingFolder> CreateFolderAsync(string name)
@@ -115,23 +150,89 @@ public class DatabaseService
     }
 
     // ── Meetings ─────────────────────────────────────────────────────────
+    /// <summary>
+    /// List projection for the meeting list panel. Transcript, Summary, and MyNotes
+    /// are NOT loaded (left null) — callers that need them must fetch the full row
+    /// with <see cref="GetMeetingAsync"/> first (MeetingDetailView.LoadMeeting does this).
+    /// </summary>
     public async Task<List<Meeting>> GetMeetingsForFolderAsync(int folderId)
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
-        return await db.Meetings
+        var rows = await db.Meetings
             .Where(m => m.FolderId == folderId && !m.IsDeleted)
             .OrderByDescending(m => m.CreatedDate)
+            .Select(ListColumns)
             .ToListAsync();
+        return rows.Select(ToListMeeting).ToList();
     }
 
+    /// <summary>Trash list — same lightweight projection as <see cref="GetMeetingsForFolderAsync"/>.</summary>
     public async Task<List<Meeting>> GetDeletedMeetingsAsync()
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
-        return await db.Meetings
+        var rows = await db.Meetings
             .Where(m => m.IsDeleted && !m.IsHiddenFromTrash)
             .OrderByDescending(m => m.DeletedDate)
+            .Select(ListColumns)
             .ToListAsync();
+        return rows.Select(ToListMeeting).ToList();
     }
+
+    // EF Core cannot project directly to an entity type inside a query, so list queries
+    // go through this intermediate row shape and are mapped back to Meeting in memory.
+    private sealed record MeetingListRow(int Id, int FolderId, string Title,
+        DateTime CreatedDate, DateTime? RecordingStarted, DateTime? RecordingEnded,
+        string? AudioFilePath, MeetingStatus Status, bool IsEncrypted,
+        bool IsDeleted, DateTime? DeletedDate);
+
+    private static readonly System.Linq.Expressions.Expression<Func<Meeting, MeetingListRow>>
+        ListColumns = m => new MeetingListRow(m.Id, m.FolderId, m.Title,
+            m.CreatedDate, m.RecordingStarted, m.RecordingEnded,
+            m.AudioFilePath, m.Status, m.IsEncrypted,
+            m.IsDeleted, m.DeletedDate);
+
+    /// <summary>
+    /// Searches all non-deleted meetings by title, transcript, summary, and notes
+    /// (case-insensitive for ASCII — SQLite LIKE semantics). Encrypted meetings match on
+    /// title only since their text columns hold ciphertext. Returns the same lightweight
+    /// projection as the other list queries.
+    /// </summary>
+    public async Task<List<Meeting>> SearchMeetingsAsync(string query)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var pattern = $"%{EscapeLike(query)}%";
+        var rows = await db.Meetings
+            .Where(m => !m.IsDeleted && (
+                EF.Functions.Like(m.Title, pattern, "\\") ||
+                (!m.IsEncrypted && (
+                    EF.Functions.Like(m.Transcript!, pattern, "\\") ||
+                    EF.Functions.Like(m.Summary!, pattern, "\\") ||
+                    EF.Functions.Like(m.MyNotes!, pattern, "\\")))))
+            .OrderByDescending(m => m.CreatedDate)
+            .Select(ListColumns)
+            .ToListAsync();
+        return rows.Select(ToListMeeting).ToList();
+    }
+
+    private static string EscapeLike(string value) => value
+        .Replace("\\", "\\\\")
+        .Replace("%", "\\%")
+        .Replace("_", "\\_");
+
+    private static Meeting ToListMeeting(MeetingListRow r) => new()
+    {
+        Id               = r.Id,
+        FolderId         = r.FolderId,
+        Title            = r.Title,
+        CreatedDate      = r.CreatedDate,
+        RecordingStarted = r.RecordingStarted,
+        RecordingEnded   = r.RecordingEnded,
+        AudioFilePath    = r.AudioFilePath,
+        Status           = r.Status,
+        IsEncrypted      = r.IsEncrypted,
+        IsDeleted        = r.IsDeleted,
+        DeletedDate      = r.DeletedDate,
+    };
 
     public async Task<Meeting?> GetMeetingAsync(int id)
     {

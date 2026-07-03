@@ -22,6 +22,12 @@ public class AppSettings
     /// output toward words it is likely to encounter (e.g. "Alice, Bob, JIRA, API gateway").
     /// </summary>
     public string WhisperInitialPrompt { get; set; } = string.Empty;
+    /// <summary>
+    /// When true, Whisper tries the Vulkan GPU runtime first and falls back to CPU
+    /// automatically if no compatible GPU/driver is found. Set false to force CPU.
+    /// Takes effect on next app start.
+    /// </summary>
+    public bool WhisperUseGpu { get; set; } = true;
 
     // AI Provider
     public string LlmProvider { get; set; } = "Ollama"; // "Ollama" or "LmStudio"
@@ -66,6 +72,12 @@ public class AppSettings
     public string DefaultMeetingTitle { get; set; } = "Meeting";
 
     // General
+    /// <summary>
+    /// Registers Ctrl+Alt+R as a system-wide hotkey that starts a new recording
+    /// (in the selected folder) or stops the active one. Off by default so the
+    /// app never grabs a hotkey another program may use. Takes effect on next app start.
+    /// </summary>
+    public bool GlobalRecordHotkeyEnabled { get; set; } = false;
     public string Theme { get; set; } = "Dark";
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool ShowTrayTimer { get; set; } = true;

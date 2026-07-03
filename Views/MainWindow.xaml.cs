@@ -282,12 +282,44 @@ public partial class MainWindow : Window
         }
     }
 
+    // Debounce so we hit the DB once per pause in typing, not once per keystroke.
+    private System.Windows.Threading.DispatcherTimer? _searchTimer;
+
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
-        var query = SearchBox.Text;
-        MeetingList.ItemsSource = string.IsNullOrWhiteSpace(query)
-            ? _vm.Meetings
-            : _vm.Meetings.Where(m => m.Title.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (_searchTimer is null)
+        {
+            _searchTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(250)
+            };
+            _searchTimer.Tick += async (_, _) =>
+            {
+                _searchTimer.Stop();
+                await RunSearchAsync();
+            };
+        }
+        _searchTimer.Stop();
+        _searchTimer.Start();
+    }
+
+    /// <summary>
+    /// Searches title, transcript, summary, and notes across ALL folders.
+    /// Empty query restores the current folder's meeting list.
+    /// </summary>
+    private async Task RunSearchAsync()
+    {
+        var query = SearchBox.Text.Trim();
+        if (string.IsNullOrEmpty(query))
+        {
+            MeetingList.ItemsSource = _vm.Meetings;
+            return;
+        }
+
+        var results = await App.GetService<Services.DatabaseService>().SearchMeetingsAsync(query);
+        // The user may have kept typing while the query ran — drop stale results.
+        if (SearchBox.Text.Trim() != query) return;
+        MeetingList.ItemsSource = results.Select(m => new MeetingViewModel(m)).ToList();
     }
 
     // ── Folder rename ──────────────────────────────────────────────────
@@ -398,7 +430,7 @@ public partial class MainWindow : Window
         });
     }
 
-    public void ShowRecordingView(MeetingViewModel meeting, bool runAI = true, bool encryptAfter = false)
+    public RecordingView ShowRecordingView(MeetingViewModel meeting, bool runAI = true, bool encryptAfter = false)
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
@@ -406,6 +438,7 @@ public partial class MainWindow : Window
         page.SetMeeting(meeting, _vm.SelectedFolder?.Name ?? string.Empty, runAI, encryptAfter);
         page.RecordingStopped += OnRecordingStopped;
         ContentFrame.Navigate(page);
+        return page;
     }
 
     public void ShowProcessingView(MeetingViewModel meetingVm, bool appendTranscript = false,
@@ -433,13 +466,17 @@ public partial class MainWindow : Window
         ContentFrame.Navigate(page);
     }
 
-    private void OnRecordingStopped(object? sender, (int meetingId, bool runAI, bool encryptAfter) args)
+    private async void OnRecordingStopped(object? sender, (int meetingId, bool runAI, bool encryptAfter) args)
     {
         var vm = _vm.Meetings.FirstOrDefault(m => m.Id == args.meetingId);
         if (vm is null) return;
         // Only append when the existing transcript is real plaintext — not ciphertext from an
-        // encrypted meeting (which would corrupt the transcript if appended to).
-        bool append = !string.IsNullOrWhiteSpace(vm.Transcript) && !vm.IsEncrypted;
+        // encrypted meeting (which would corrupt the transcript if appended to). Checked
+        // against the DB row because list VMs don't carry the transcript column.
+        var meeting = await App.GetService<Services.DatabaseService>().GetMeetingAsync(args.meetingId);
+        bool append = meeting is not null
+            && !string.IsNullOrWhiteSpace(meeting.Transcript)
+            && !meeting.IsEncrypted;
         ShowProcessingView(vm, append, args.runAI, args.encryptAfter);
     }
 
@@ -494,8 +531,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshTrashCountAsync()
     {
-        var deleted = await App.GetService<Services.DatabaseService>().GetDeletedMeetingsAsync();
-        int count = deleted.Count;
+        int count = await App.GetService<Services.DatabaseService>().GetTrashCountAsync();
         TrashCountText.Text = count.ToString();
         TrashCountBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -536,6 +572,91 @@ public partial class MainWindow : Window
     private void UpdateFolderTitle()
     {
         FolderTitleText.Text = _vm.SelectedFolder?.Name ?? "All Meetings";
+    }
+
+    // ── Global record hotkey (Ctrl+Alt+R) ──────────────────────────────
+    private const int RecordHotkeyId = 0x4D4E; // "MN"
+    private const int WmHotkey = 0x0312;
+    private System.Windows.Interop.HwndSource? _hwndSource;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        var settings = App.GetService<Models.AppSettings>();
+        if (!settings.GlobalRecordHotkeyEnabled) return;
+
+        var handle = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        _hwndSource = System.Windows.Interop.HwndSource.FromHwnd(handle);
+        _hwndSource?.AddHook(HotkeyHook);
+
+        const uint modAlt = 0x0001, modControl = 0x0002;
+        const uint vkR = 0x52;
+        if (!RegisterHotKey(handle, RecordHotkeyId, modControl | modAlt, vkR))
+            _ = App.GetService<Services.IAppLogger>().WarnAsync(
+                "Could not register Ctrl+Alt+R global hotkey — another app already uses it.",
+                nameof(MainWindow));
+    }
+
+    private IntPtr HotkeyHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WmHotkey && wParam.ToInt32() == RecordHotkeyId)
+        {
+            handled = true;
+            _ = Dispatcher.InvokeAsync(ToggleRecordingFromHotkeyAsync);
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Ctrl+Alt+R: stops the active recording, or starts a new meeting recording
+    /// in the selected (or first) folder — works even when minimized to tray.
+    /// </summary>
+    private async Task ToggleRecordingFromHotkeyAsync()
+    {
+        if (IsRecordingActive())
+        {
+            if (ContentFrame.Content is RecordingView recordingView)
+                await recordingView.StopRecordingExternallyAsync();
+            return;
+        }
+
+        Show();
+        Activate();
+
+        if (_vm.SelectedFolder is null && _vm.Folders.Count > 0)
+        {
+            await _vm.SelectFolderAsync(_vm.Folders[0]);
+            MeetingList.ItemsSource = _vm.Meetings;
+            NewMeetingButton.Visibility = Visibility.Visible;
+            UpdateFolderTitle();
+        }
+        if (_vm.SelectedFolder is null) return;
+
+        await _vm.AddMeetingAsync();
+        MeetingList.ItemsSource = _vm.Meetings;
+        if (_vm.SelectedMeeting is null) return;
+
+        var settings = App.GetService<Models.AppSettings>();
+        var page = ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault);
+        await page.StartImmediatelyAsync();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        if (_hwndSource is not null)
+        {
+            UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, RecordHotkeyId);
+            _hwndSource.RemoveHook(HotkeyHook);
+            _hwndSource = null;
+        }
+        base.OnClosed(e);
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

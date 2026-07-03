@@ -55,6 +55,19 @@ public partial class MeetingDetailView : Page
         _decryptedNotes = null;
         _dataKey = null;
 
+        // List queries omit the heavy text columns (transcript/summary/notes),
+        // so hydrate the VM from the full DB row before anything reads them.
+        var full = await _db.GetMeetingAsync(vm.Id);
+        if (full is not null)
+        {
+            vm.Transcript    = full.Transcript;
+            vm.Summary       = full.Summary;
+            vm.MyNotes       = full.MyNotes;
+            vm.AudioFilePath = full.AudioFilePath;
+            vm.IsEncrypted   = full.IsEncrypted;
+            vm.Status        = full.Status;
+        }
+
         MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
                             ? vm.DateDisplay
                             : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
@@ -89,10 +102,13 @@ public partial class MeetingDetailView : Page
 
         var hasContent = vm.Status != MeetingStatus.New;
         var showActions = hasContent && !vm.IsEncrypted;
+        // The mode dropdown also applies to new recordings (RecordButton_Click reads it),
+        // so it stays visible in the Record Ready state — only encrypted meetings hide it.
+        var showMode = !vm.IsEncrypted;
         ExportButton.Visibility          = showActions ? Visibility.Visible : Visibility.Collapsed;
         SepAfterExport.Visibility        = showActions ? Visibility.Visible : Visibility.Collapsed;
-        SepAfterEncrypt.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
-        ReprocessModeComboBox.Visibility = showActions ? Visibility.Visible : Visibility.Collapsed;
+        SepAfterEncrypt.Visibility       = showMode ? Visibility.Visible : Visibility.Collapsed;
+        ReprocessModeComboBox.Visibility = showMode ? Visibility.Visible : Visibility.Collapsed;
         ReprocessButton.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
         SplitButton.Visibility           = Visibility.Collapsed;
     }
@@ -213,9 +229,12 @@ public partial class MeetingDetailView : Page
             ChatMessages.Children.Clear();
 
             ShowEncryptedState();
-            NewMeetingPanel.Visibility = Visibility.Collapsed;
-            ReprocessButton.Visibility = Visibility.Collapsed;
-            ExportButton.Visibility    = Visibility.Collapsed;
+            NewMeetingPanel.Visibility       = Visibility.Collapsed;
+            ReprocessButton.Visibility       = Visibility.Collapsed;
+            ExportButton.Visibility          = Visibility.Collapsed;
+            ReprocessModeComboBox.Visibility = Visibility.Collapsed;
+            SepAfterExport.Visibility        = Visibility.Collapsed;
+            SepAfterEncrypt.Visibility       = Visibility.Collapsed;
         }
         catch (Exception ex)
         {
@@ -478,39 +497,53 @@ public partial class MeetingDetailView : Page
         {
             FileName    = $"{safeName}_{DateTime.Now:yyyyMMdd}",
             DefaultExt  = ".txt",
-            Filter      = "Text file (*.txt)|*.txt|All files (*.*)|*.*",
+            Filter      = "Text file (*.txt)|*.txt|Markdown file (*.md)|*.md|All files (*.*)|*.*",
             Title       = "Export Meeting Notes"
         };
 
         if (dialog.ShowDialog() != true) return;
 
+        var markdown = Path.GetExtension(dialog.FileName)
+            .Equals(".md", StringComparison.OrdinalIgnoreCase);
+        // Notes are stored as RTF — export readable plain text, not raw RTF markup
+        var plainNotes = MeetingHtmlBuilder.ExtractPlainTextFromRtf(_meetingVm.MyNotes);
+
         var sb = new StringBuilder();
-        sb.AppendLine(_meetingVm.Title);
-        sb.AppendLine($"Date: {_meetingVm.DateDisplay}   Duration: {_meetingVm.DurationDisplay}");
-        sb.AppendLine(new string('─', 60));
-
-        if (!string.IsNullOrWhiteSpace(_meetingVm.MyNotes))
+        if (markdown)
         {
+            sb.AppendLine($"# {_meetingVm.Title}");
             sb.AppendLine();
-            sb.AppendLine("MY NOTES");
-            sb.AppendLine(new string('─', 20));
-            sb.AppendLine(_meetingVm.MyNotes);
+            sb.AppendLine($"**Date:** {_meetingVm.DateDisplay}   **Duration:** {_meetingVm.DurationDisplay}");
+            AppendSection("My Notes", plainNotes);
+            AppendSection("AI Summary", _meetingVm.Summary);
+            AppendSection("Transcript", _meetingVm.Transcript);
+
+            void AppendSection(string heading, string? content)
+            {
+                if (string.IsNullOrWhiteSpace(content)) return;
+                sb.AppendLine();
+                sb.AppendLine($"## {heading}");
+                sb.AppendLine();
+                sb.AppendLine(content);
+            }
         }
-
-        if (!string.IsNullOrWhiteSpace(_meetingVm.Summary))
+        else
         {
-            sb.AppendLine();
-            sb.AppendLine("AI SUMMARY");
-            sb.AppendLine(new string('─', 20));
-            sb.AppendLine(_meetingVm.Summary);
-        }
+            sb.AppendLine(_meetingVm.Title);
+            sb.AppendLine($"Date: {_meetingVm.DateDisplay}   Duration: {_meetingVm.DurationDisplay}");
+            sb.AppendLine(new string('─', 60));
+            AppendSection("MY NOTES", plainNotes);
+            AppendSection("AI SUMMARY", _meetingVm.Summary);
+            AppendSection("TRANSCRIPT", _meetingVm.Transcript);
 
-        if (!string.IsNullOrWhiteSpace(_meetingVm.Transcript))
-        {
-            sb.AppendLine();
-            sb.AppendLine("TRANSCRIPT");
-            sb.AppendLine(new string('─', 20));
-            sb.AppendLine(_meetingVm.Transcript);
+            void AppendSection(string heading, string? content)
+            {
+                if (string.IsNullOrWhiteSpace(content)) return;
+                sb.AppendLine();
+                sb.AppendLine(heading);
+                sb.AppendLine(new string('─', 20));
+                sb.AppendLine(content);
+            }
         }
 
         await File.WriteAllTextAsync(dialog.FileName, sb.ToString(), Encoding.UTF8);
@@ -860,11 +893,13 @@ public partial class MeetingDetailView : Page
         TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(raw));
     }
 
+    [GeneratedRegex(@"^\[[^\]]+\]\s*", RegexOptions.Multiline)]
+    private static partial Regex LeadingTimestampRegex();
+
     private string? ApplyTimestampFilter(string? text)
     {
         if (_showTimestamps || string.IsNullOrEmpty(text)) return text;
-        return string.Join('\n', text.Split('\n')
-            .Select(line => Regex.Replace(line, @"^\[[^\]]+\]\s*", "")));
+        return LeadingTimestampRegex().Replace(text, "");
     }
 
     private UIElement AddChatBubble(string sender, string message, bool isUser)

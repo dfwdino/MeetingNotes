@@ -11,10 +11,10 @@ public partial class FolderViewModel : BaseViewModel
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isEditing;
 
-    public FolderViewModel(MeetingFolder folder)
+    public FolderViewModel(MeetingFolder folder, int meetingCount)
     {
         _id = folder.Id;
         _name = folder.Name;
-        _meetingCount = folder.Meetings.Count;
+        _meetingCount = meetingCount;
     }
 }

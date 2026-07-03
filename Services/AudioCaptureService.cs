@@ -49,6 +49,9 @@ public class AudioCaptureService : IDisposable
     private volatile bool _micMuted;
     private volatile bool _loopbackMuted;
 
+    // Reusable zero buffer for muted writes — avoids allocating per audio callback (~every 10 ms)
+    private byte[] _silenceBuffer = [];
+
     // Lock that guards writer swaps during live chunk splitting.
     // Audio callbacks hold this lock only while writing (microseconds);
     // SplitChunkAsync holds it only while swapping references (nanoseconds).
@@ -283,7 +286,7 @@ public class AudioCaptureService : IDisposable
         lock (_writerLock)
         {
             if (_loopbackMuted)
-                _wavWriter?.Write(new byte[e.BytesRecorded], 0, e.BytesRecorded);
+                _wavWriter?.Write(GetSilence(e.BytesRecorded), 0, e.BytesRecorded);
             else
             {
                 _wavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
@@ -298,13 +301,21 @@ public class AudioCaptureService : IDisposable
         lock (_writerLock)
         {
             if (_micMuted)
-                _micWavWriter?.Write(new byte[e.BytesRecorded], 0, e.BytesRecorded);
+                _micWavWriter?.Write(GetSilence(e.BytesRecorded), 0, e.BytesRecorded);
             else
             {
                 _micWavWriter?.Write(e.Buffer, 0, e.BytesRecorded);
                 UpdatePeakLevel(CalculateLevelPcm16(e.Buffer, e.BytesRecorded));
             }
         }
+    }
+
+    // Called under _writerLock, so a single shared buffer is safe for both callbacks.
+    private byte[] GetSilence(int bytes)
+    {
+        if (_silenceBuffer.Length < bytes)
+            _silenceBuffer = new byte[bytes];
+        return _silenceBuffer;
     }
 
     // ──────────────────────────────────────────────────────────────
