@@ -26,7 +26,7 @@
   <Identity
     Name="MeetingNotes"
     Publisher="CN=dfwDino"
-    Version="1.2026.5.21"
+    Version="1.2026.7.10"
     ProcessorArchitecture="x64" />
 
   <Properties>
