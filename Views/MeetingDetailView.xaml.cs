@@ -55,6 +55,12 @@ public partial class MeetingDetailView : Page
         _decryptedNotes = null;
         _dataKey = null;
 
+        // AI Only=0, Transcription Only=1, Both=2; default tracks RunAiByDefault.
+        // Must be set BEFORE the first await — a fast user can click "Record Ready"
+        // before the async continuation runs, and GetReprocessMode must never see
+        // an uninitialized combo (that ran AI on meetings marked Transcription Only).
+        ReprocessModeComboBox.SelectedIndex = _settings.RunAiByDefault ? 0 : 1;
+
         // List queries omit the heavy text columns (transcript/summary/notes),
         // so hydrate the VM from the full DB row before anything reads them.
         var full = await _db.GetMeetingAsync(vm.Id);
@@ -71,9 +77,6 @@ public partial class MeetingDetailView : Page
         MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
                             ? vm.DateDisplay
                             : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
-
-        // AI Only=0, Transcription Only=1, Both=2; default tracks RunAiByDefault
-        ReprocessModeComboBox.SelectedIndex = _settings.RunAiByDefault ? 0 : 1;
 
         if (vm.IsEncrypted)
         {
@@ -401,7 +404,9 @@ public partial class MeetingDetailView : Page
         {
             "Transcription Only" => (false, true),
             "Both"               => (true,  true),
-            _                    => (true,  false), // "AI Only" — reuse existing transcript
+            "AI Only"            => (true,  false), // reuse existing transcript
+            // Combo somehow not initialized — fall back to the user's setting, never force AI on
+            _                    => (_settings.RunAiByDefault, true),
         };
     }
 

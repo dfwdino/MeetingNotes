@@ -21,11 +21,13 @@ public partial class ProcessingView : Page
 
     private bool _appendTranscript;
     private bool _runAI = true;
+    private bool _forceTranscribe;
 
     public async void StartProcessing(int meetingId, bool appendTranscript = false, bool runAI = true, bool forceTranscribe = false)
     {
         _appendTranscript = appendTranscript;
         _runAI = runAI;
+        _forceTranscribe = forceTranscribe;
 
         var db = App.GetService<DatabaseService>();
         _currentMeeting = await db.GetMeetingAsync(meetingId);
@@ -48,7 +50,7 @@ public partial class ProcessingView : Page
         _vm.ErrorOccurred         += (_, err) => Dispatcher.Invoke(() => ShowError(err.message));
         _vm.WhisperSetupRequired  += (_, m)   => Dispatcher.Invoke(() => HandleWhisperSetup(m));
 
-        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI, forceTranscribe);
+        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI, _forceTranscribe);
     }
 
     private void ShowError(string message)
@@ -73,10 +75,11 @@ public partial class ProcessingView : Page
             return;
         }
 
-        // Model re-downloaded — retry processing automatically
+        // Model re-downloaded — retry processing automatically with the original flags
+        // (defaults would silently re-enable AI on a Transcription Only run)
         ErrorPanel.Visibility = System.Windows.Visibility.Collapsed;
         LivePreviewText.Text  = string.Empty;
-        await _vm.ProcessMeetingAsync(meeting);
+        await _vm.ProcessMeetingAsync(meeting, _appendTranscript, _runAI, _forceTranscribe);
     }
 
     private async void RetryButton_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -84,7 +87,8 @@ public partial class ProcessingView : Page
         if (_currentMeeting is null) return;
         ErrorPanel.Visibility = System.Windows.Visibility.Collapsed;
         LivePreviewText.Text  = string.Empty;
-        await _vm.ProcessMeetingAsync(_currentMeeting);
+        // Retry with the original flags — defaults would re-enable AI on a Transcription Only run
+        await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI, _forceTranscribe);
     }
 
     private void UpdateStepUI(string step)
