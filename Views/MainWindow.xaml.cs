@@ -47,6 +47,48 @@ public partial class MainWindow : Window
     private bool IsRecordingActive() =>
         App.GetService<Services.AudioCaptureService>().IsRecording;
 
+    // Cursor + tooltip feedback for actions blocked while a recording is active.
+    // Evaluated on every hover so no recording start/stop event wiring is needed.
+    private const string RecordingBlockedTip =
+        "Not available while recording.\nStop the recording first.";
+    private readonly Dictionary<FrameworkElement, object?> _preRecordingToolTips = [];
+
+    private void BlockedNav_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+            ApplyBlockedState(fe, System.Windows.Input.Cursors.Hand);
+    }
+
+    private void BlockedButton_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+            ApplyBlockedState(fe, null);
+    }
+
+    private void ApplyBlockedState(FrameworkElement fe, System.Windows.Input.Cursor? normalCursor)
+    {
+        if (IsRecordingActive())
+        {
+            fe.Cursor = System.Windows.Input.Cursors.No;
+            if (fe.ToolTip as string != RecordingBlockedTip)
+            {
+                _preRecordingToolTips[fe] = fe.ToolTip; // remember the element's own tooltip (if any)
+                fe.ToolTip = RecordingBlockedTip;
+                System.Windows.Controls.ToolTipService.SetInitialShowDelay(fe, 200);
+            }
+        }
+        else
+        {
+            fe.Cursor = normalCursor;
+            if (fe.ToolTip as string == RecordingBlockedTip)
+            {
+                _preRecordingToolTips.Remove(fe, out var original);
+                fe.ToolTip = original;
+                fe.ClearValue(System.Windows.Controls.ToolTipService.InitialShowDelayProperty);
+            }
+        }
+    }
+
     private async void FolderItem_Click(object sender, MouseButtonEventArgs e)
     {
         if (IsRecordingActive()) return; // don't navigate away during recording

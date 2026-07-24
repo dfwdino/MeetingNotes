@@ -63,6 +63,7 @@
                     <!-- All Meetings -->
                     <Border x:Name="AllMeetingsBorder" Cursor="Hand"
                             Margin="0,0,0,5"
+                            MouseEnter="BlockedNav_MouseEnter"
                             MouseLeftButtonDown="AllMeetings_Click">
                         <Grid Margin="16,9">
                             <Grid.ColumnDefinitions>
@@ -80,6 +81,7 @@
                     <!-- Trash -->
                     <Border x:Name="TrashBorder" Cursor="Hand"
                             Margin="0,0,0,5"
+                            MouseEnter="BlockedNav_MouseEnter"
                             MouseLeftButtonDown="Trash_Click">
                         <Grid Margin="16,9">
                             <Grid.ColumnDefinitions>
@@ -110,6 +112,7 @@
                                 <Border x:Name="FolderCardBorder"
                                         Cursor="Hand"
                                         Margin="0,0,0,5"
+                                        MouseEnter="BlockedNav_MouseEnter"
                                         MouseLeftButtonDown="FolderItem_Click"
                                         Tag="{Binding}">
                                     <Border.Style>
@@ -288,7 +291,9 @@
             <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SeparatorBrush}" Padding="16,12">
                 <Grid>
                     <Button Content="⚙  Settings" Style="{DynamicResource GhostButton}"
-                            HorizontalAlignment="Left" Click="SettingsButton_Click"/>
+                            HorizontalAlignment="Left"
+                            MouseEnter="BlockedButton_MouseEnter"
+                            Click="SettingsButton_Click"/>
                     <Button Content="ℹ" Style="{DynamicResource GhostButton}"
                             HorizontalAlignment="Right" Width="32" Padding="0"
                             FontSize="15" ToolTip="About"
@@ -358,6 +363,7 @@
                         Style="{DynamicResource PrimaryButton}"
                         Padding="10,5" FontSize="12" Margin="4,0,0,0"
                         Visibility="Collapsed"
+                        MouseEnter="BlockedButton_MouseEnter"
                         Click="NewMeetingButton_Click"/>
             </Grid>
 
@@ -377,6 +383,7 @@
                             <Border x:Name="MeetingCardBorder"
                                     BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SeparatorBrush}"
                                     Cursor="Hand" Padding="16,12"
+                                    MouseEnter="BlockedNav_MouseEnter"
                                     MouseLeftButtonDown="MeetingItem_Click"
                                     Tag="{Binding}">
                                 <Border.Style>
@@ -498,6 +505,7 @@
                                         <!-- Move to folder -->
                                         <Button Content="📁" FontSize="13" ToolTip="Move to folder..."
                                                 Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"
+                                                MouseEnter="BlockedNav_MouseEnter"
                                                 Tag="{Binding}" Click="MoveMeeting_Click"
                                                 Background="Transparent" BorderThickness="0">
                                             <Button.Template>
@@ -511,6 +519,7 @@
                                         <!-- Delete -->
                                         <Button Content="×" FontSize="16"
                                                 Padding="6,3" Cursor="Hand" Foreground="#FFAAAAAA"
+                                                MouseEnter="BlockedNav_MouseEnter"
                                                 Tag="{Binding}" Click="DeleteMeeting_Click"
                                                 Background="Transparent" BorderThickness="0">
                                             <Button.Template>
