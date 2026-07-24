@@ -27,6 +27,13 @@ public class Meeting
     /// </summary>
     public string? AudioFilePaths { get; set; }
 
+    /// <summary>
+    /// Optional per-meeting participant names, companies, and acronyms entered on the
+    /// recording screen. Appended to the global Whisper initial prompt at transcription
+    /// time so accented pronunciations of these words are recognized correctly.
+    /// </summary>
+    public string? WhisperPromptTerms { get; set; }
+
     public string? Transcript { get; set; }
     public string? Summary { get; set; }
     public string? MyNotes { get; set; }

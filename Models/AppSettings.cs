@@ -11,17 +11,24 @@ public class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "whisper.net");
     public int TranscriptionChunkSeconds { get; set; } = 60;
     /// <summary>
-    /// Beam search width passed to Whisper. 1 = greedy (fastest); 5 = recommended.
+    /// Beam search width passed to Whisper. 1 = greedy (fastest); 8 = most accurate.
     /// Higher values improve accuracy for accented or non-native speech at the cost of
     /// slightly longer transcription time.
     /// </summary>
-    public int WhisperBeamSize { get; set; } = 5;
+    public int WhisperBeamSize { get; set; } = 8;
     /// <summary>
     /// Optional seed text shown to Whisper before it processes each audio file.
-    /// Include participant names, acronyms, and domain terms so Whisper biases its
-    /// output toward words it is likely to encounter (e.g. "Alice, Bob, JIRA, API gateway").
+    /// Whisper mimics the prompt's style (punctuated prose → punctuated transcript) and
+    /// biases output toward its vocabulary. Per-meeting names/terms
+    /// (<see cref="Meeting.WhisperPromptTerms"/>) are appended to this at transcription
+    /// time. Whisper only keeps the last ~224 tokens of the combined prompt.
     /// </summary>
-    public string WhisperInitialPrompt { get; set; } = string.Empty;
+    public string WhisperInitialPrompt { get; set; } =
+        "This is the transcript of a professional business meeting with multiple speakers " +
+        "from different countries and backgrounds. The conversation is in clear, standard " +
+        "English with proper punctuation. Topics include the agenda, project updates, action " +
+        "items, deadlines, budgets, and decisions. Speakers refer to each other by name and " +
+        "occasionally mention companies, products, and technical terms.";
 
     // AI Provider
     public string LlmProvider { get; set; } = "Ollama"; // "Ollama" or "LmStudio"

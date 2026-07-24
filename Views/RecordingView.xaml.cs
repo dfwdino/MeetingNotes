@@ -59,6 +59,7 @@ public partial class RecordingView : Page
     private async Task LoadMeetingAndDevicesAsync(MeetingViewModel vm)
     {
         _meeting = await _db.GetMeetingAsync(vm.Id);
+        PromptTermsBox.Text = _meeting?.WhisperPromptTerms ?? string.Empty;
 
         var loopbackDevices = AudioCaptureService.GetLoopbackDevices();
         var micDevices      = AudioCaptureService.GetMicDevices();
@@ -121,6 +122,8 @@ public partial class RecordingView : Page
         _meeting.Status           = MeetingStatus.Recording;
         _meeting.RecordingStarted = DateTime.Now;
         _meeting.AudioFilePath    = outputPath;
+        _meeting.WhisperPromptTerms = string.IsNullOrWhiteSpace(PromptTermsBox.Text)
+            ? null : PromptTermsBox.Text.Trim();
 
         // Accumulate every file path so soft-delete can remove all of them
         _meeting.AudioFilePaths = string.IsNullOrEmpty(_meeting.AudioFilePaths)

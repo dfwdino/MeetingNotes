@@ -24,7 +24,7 @@ public partial class SettingsView : Page
         WhisperModelBox.ItemsSource = _vm.WhisperModels;
         WhisperModelBox.SelectedItem = _vm.WhisperModel;
 
-        WhisperBeamSizeBox.ItemsSource = (string[])["1 — Fastest", "3 — Balanced", "5 — Accurate (recommended)", "8 — Most accurate"];
+        WhisperBeamSizeBox.ItemsSource = (string[])["1 — Fastest", "3 — Balanced", "5 — Accurate", "8 — Most accurate (recommended)"];
         WhisperBeamSizeBox.SelectedIndex = _vm.WhisperBeamSize switch
         {
             1 => 0, 3 => 1, 8 => 3, _ => 2   // default to index 2 = beam 5

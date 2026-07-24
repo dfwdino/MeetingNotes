@@ -154,8 +154,8 @@ public partial class ProcessingViewModel : BaseViewModel
                     newTranscript = await _transcription.TranscribeFileAsync(
                         meeting.AudioFilePath!,
                         beamSize: _settings.WhisperBeamSize,
-                        initialPrompt: string.IsNullOrWhiteSpace(_settings.WhisperInitialPrompt)
-                            ? null : _settings.WhisperInitialPrompt,
+                        initialPrompt: BuildInitialPrompt(
+                            _settings.WhisperInitialPrompt, meeting.WhisperPromptTerms),
                         recordingStarted: meeting.RecordingStarted,
                         cancellationToken);
                 }
@@ -309,6 +309,19 @@ public partial class ProcessingViewModel : BaseViewModel
 
     public event EventHandler<(string message, Meeting meeting)>? ErrorOccurred;
     public event EventHandler<Meeting>? WhisperSetupRequired;
+
+    /// <summary>
+    /// Combines the global Whisper prompt with this meeting's participant/term list.
+    /// The terms go at the END: Whisper only keeps the last ~224 tokens of the prompt,
+    /// so when it truncates, the generic sentence is dropped before the names are.
+    /// </summary>
+    private static string? BuildInitialPrompt(string basePrompt, string? meetingTerms)
+    {
+        var prompt = basePrompt.Trim();
+        if (!string.IsNullOrWhiteSpace(meetingTerms))
+            prompt = $"{prompt} Participants and terms: {meetingTerms.Trim()}.".Trim();
+        return string.IsNullOrWhiteSpace(prompt) ? null : prompt;
+    }
 
     private static bool IsTooShortToSummarize(string? text) =>
         string.IsNullOrWhiteSpace(text) ||

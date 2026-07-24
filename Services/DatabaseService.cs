@@ -48,6 +48,14 @@ public class DatabaseService
         }
         catch { }
 
+        // Per-meeting Whisper prompt terms (participants/acronyms) for existing installs
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE Meetings ADD COLUMN WhisperPromptTerms TEXT");
+        }
+        catch { }
+
         // Drop unused columns and tables for existing installs
         try
         {
