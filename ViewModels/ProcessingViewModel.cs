@@ -181,6 +181,10 @@ public partial class ProcessingViewModel : BaseViewModel
                     meeting.EncryptionSalt = null;
                     meeting.EncryptedDataKey = null;
                     meeting.MyNotes = null;
+                    // This wasn't supposed to happen (callers should clear IsEncrypted before
+                    // reaching here) — flag it so the detail view warns the user their meeting
+                    // is now sitting as plaintext instead of silently leaving it that way.
+                    meeting.PendingReEncrypt = true;
                 }
 
                 await _db.UpdateMeetingAsync(meeting);

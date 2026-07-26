@@ -500,7 +500,7 @@ public partial class MainWindow : Window
                 {
                     var detailPage = ShowMeetingDetail(vm);
                     if (encryptAfter)
-                        await detailPage.EncryptMeetingNowAsync();
+                        await detailPage.EncryptMeetingNowAsync(skipConfirm: true);
                 }
             });
         };
@@ -607,7 +607,8 @@ public partial class MainWindow : Window
         if (_vm.SelectedMeeting is not null)
         {
             var settings = App.GetService<Models.AppSettings>();
-            ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault);
+            ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault,
+                encryptAfter: settings.EncryptMeetingByDefault);
         }
     }
 
@@ -686,7 +687,8 @@ public partial class MainWindow : Window
         if (_vm.SelectedMeeting is null) return;
 
         var settings = App.GetService<Models.AppSettings>();
-        var page = ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault);
+        var page = ShowRecordingView(_vm.SelectedMeeting, settings.RunAiByDefault,
+            encryptAfter: settings.EncryptMeetingByDefault);
         await page.StartImmediatelyAsync();
     }
 

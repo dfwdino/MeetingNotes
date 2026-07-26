@@ -28,6 +28,7 @@ public partial class MeetingDetailView : Page
     private bool _notesChanged;
     private bool _suppressNoteChange;
     private bool _suppressEncryptEvent;
+    private bool _unlockButtonSwapped;
     private bool _showTimestamps = true;
     private System.Windows.Threading.DispatcherTimer? _saveTimer;
     // Decrypted content held in memory only (never written back to DB)
@@ -50,10 +51,7 @@ public partial class MeetingDetailView : Page
     public async void LoadMeeting(MeetingViewModel vm)
     {
         _meetingVm = vm;
-        _decryptedTranscript = null;
-        _decryptedSummary = null;
-        _decryptedNotes = null;
-        _dataKey = null;
+        ClearDecryptedState();
 
         // AI Only=0, Transcription Only=1, Both=2; default tracks RunAiByDefault.
         // Must be set BEFORE the first await — a fast user can click "Record Ready"
@@ -69,9 +67,10 @@ public partial class MeetingDetailView : Page
             vm.Transcript    = full.Transcript;
             vm.Summary       = full.Summary;
             vm.MyNotes       = full.MyNotes;
-            vm.AudioFilePath = full.AudioFilePath;
-            vm.IsEncrypted   = full.IsEncrypted;
-            vm.Status        = full.Status;
+            vm.AudioFilePath    = full.AudioFilePath;
+            vm.IsEncrypted      = full.IsEncrypted;
+            vm.PendingReEncrypt = full.PendingReEncrypt;
+            vm.Status           = full.Status;
         }
 
         MetaText.Text = string.IsNullOrEmpty(vm.DurationDisplay)
@@ -85,6 +84,7 @@ public partial class MeetingDetailView : Page
         else
         {
             ShowUnencryptedState(vm);
+            PendingReEncryptBanner.Visibility = vm.PendingReEncrypt ? Visibility.Visible : Visibility.Collapsed;
             LoadRichText(vm.MyNotes);
             TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(vm.Transcript));
             SummaryText.Text    = AddLineSpacing(vm.Summary);
@@ -120,6 +120,17 @@ public partial class MeetingDetailView : Page
 
     private void ShowEncryptedState()
     {
+        // If the user had previously unlocked+re-locked in this view instance, the Unlock
+        // button was swapped to a Re-lock button — put it back so Unlock works again.
+        if (_unlockButtonSwapped)
+        {
+            UnlockButton.Click -= RelockButton_Click;
+            UnlockButton.Click += UnlockButton_Click;
+            _unlockButtonSwapped = false;
+        }
+        UnlockButton.Content = "🔑  Unlock to View";
+        EncryptedBadgeText.Text = "🔒 Encrypted";
+
         EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
         EncryptedBadge.Visibility = Visibility.Visible;
         EncryptedOverlay.Visibility = Visibility.Visible;
@@ -131,6 +142,10 @@ public partial class MeetingDetailView : Page
         NewMeetingPanel.Visibility = Visibility.Collapsed;
         TabChat.Visibility = Visibility.Collapsed;
         ReSummarizeButton.Visibility = Visibility.Collapsed;
+        PendingReEncryptBanner.Visibility = Visibility.Collapsed;
+
+        // Locking drops any content that was held decrypted in memory/UI.
+        ClearDecryptedState();
     }
 
     private void ShowUnencryptedState(MeetingViewModel vm)
@@ -141,10 +156,32 @@ public partial class MeetingDetailView : Page
         TabBar.Visibility = Visibility.Visible;
         TabChat.Visibility = Visibility.Visible;
 
-        // Set checkbox from setting without triggering the Checked event handler
+        // Only pre-check the box for a brand-new meeting about to be recorded — pre-checking
+        // it on an existing Ready meeting would show "checked" on content that isn't actually
+        // encrypted yet (and checking it here wouldn't encrypt anything for a Ready meeting).
         _suppressEncryptEvent = true;
-        EncryptMeetingCheckBox.IsChecked = _settings.EncryptMeetingByDefault;
+        EncryptMeetingCheckBox.IsChecked = vm.Status == MeetingStatus.New && _settings.EncryptMeetingByDefault;
         _suppressEncryptEvent = false;
+    }
+
+    /// <summary>Drops decrypted content held only in memory/UI (called on lock and on load).</summary>
+    private void ClearDecryptedState()
+    {
+        if (_dataKey is not null)
+        {
+            CryptographicOperations.ZeroMemory(_dataKey);
+            _dataKey = null;
+        }
+        _decryptedTranscript = null;
+        _decryptedSummary = null;
+        _decryptedNotes = null;
+
+        _suppressNoteChange = true;
+        try { MyNotesBox.Document.Blocks.Clear(); }
+        finally { _suppressNoteChange = false; }
+        TranscriptText.Text = string.Empty;
+        SummaryText.Text = string.Empty;
+        ChatMessages.Children.Clear();
     }
 
     // ── Encrypt checkbox ──────────────────────────────────────────────────
@@ -163,31 +200,44 @@ public partial class MeetingDetailView : Page
         // Nothing to do — just a flag for future recording
     }
 
-    /// <summary>Encrypts the current meeting immediately, deletes audio, and updates the UI.</summary>
-    public async Task EncryptMeetingNowAsync()
+    private async void PendingReEncryptButton_Click(object sender, RoutedEventArgs e) =>
+        await EncryptMeetingNowAsync(skipConfirm: true);
+
+    /// <summary>
+    /// Encrypts the current meeting immediately, deletes audio, and updates the UI.
+    /// </summary>
+    /// <param name="skipConfirm">
+    /// Skip the "this is permanent" warning — used when the user already confirmed this
+    /// exact action (auto re-encrypt after a re-record, or completing a pending re-encrypt).
+    /// </param>
+    public async Task EncryptMeetingNowAsync(bool skipConfirm = false)
     {
         if (_meetingVm is null) return;
 
-        var confirm = System.Windows.MessageBox.Show(
-            "Encrypting this meeting is permanent and cannot be undone.\n\n" +
-            "The audio recording will be permanently deleted and will not be able to be transcribed again.\n\n" +
-            "All text content — transcript, summary, notes, and chat history — will be\n" +
-            "encrypted and stored securely. You will need your password to view them.\n\n" +
-            "Continue with encryption?",
-            "Encrypt Meeting",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirm != MessageBoxResult.Yes)
+        if (!skipConfirm)
         {
-            EncryptMeetingCheckBox.IsChecked = false;
-            return;
+            var confirm = System.Windows.MessageBox.Show(
+                "Encrypting this meeting is permanent and cannot be undone.\n\n" +
+                "The audio recording will be deleted from disk (not securely wiped) and will not be able to be transcribed again.\n\n" +
+                "All text content — transcript, summary, notes, and chat history — will be\n" +
+                "encrypted and stored securely. You will need your password to view them.\n\n" +
+                "Continue with encryption?",
+                "Encrypt Meeting",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes)
+            {
+                EncryptMeetingCheckBox.IsChecked = false;
+                return;
+            }
         }
 
         var dialog = new EncryptPasswordDialog { Owner = Window.GetWindow(this), IsEncryptMode = true };
         if (dialog.ShowDialog() != true)
         {
-            // User cancelled — uncheck the box
+            // User cancelled — uncheck the box. If this meeting is PendingReEncrypt, it stays
+            // that way (and the banner keeps prompting) until they actually set a password.
             EncryptMeetingCheckBox.IsChecked = false;
             return;
         }
@@ -209,6 +259,7 @@ public partial class MeetingDetailView : Page
             meeting.IsEncrypted     = true;
             meeting.EncryptionSalt  = Convert.ToBase64String(salt);
             meeting.EncryptedDataKey = Convert.ToBase64String(wrappedKey);
+            meeting.PendingReEncrypt = false;
 
             // Delete audio files — required when encrypting
             DeleteMeetingAudio(meeting);
@@ -217,6 +268,7 @@ public partial class MeetingDetailView : Page
 
             // Update the VM so the list item reflects encrypted status
             _meetingVm.IsEncrypted = true;
+            _meetingVm.PendingReEncrypt = false;
             _meetingVm.AudioFilePath = null;
             _meetingVm.Transcript = meeting.Transcript;
             _meetingVm.Summary    = meeting.Summary;
@@ -275,52 +327,62 @@ public partial class MeetingDetailView : Page
     {
         if (_meetingVm is null) return;
 
-        var dialog = new EncryptPasswordDialog { Owner = Window.GetWindow(this), IsEncryptMode = false };
-        if (dialog.ShowDialog() != true) return;
-
         var meeting = await _db.GetMeetingAsync(_meetingVm.Id);
         if (meeting?.EncryptionSalt is null || meeting.EncryptedDataKey is null) return;
 
-        try
+        // Reopen the password dialog immediately with the error shown inline instead of
+        // popping a separate MessageBox on top of it — one less click for a typo'd password.
+        string? error = null;
+        while (true)
         {
-            var salt = Convert.FromBase64String(meeting.EncryptionSalt);
-            var kek = _encryption.DeriveKeyFromPassword(dialog.EnteredPassword, salt);
-            var wrappedKey = Convert.FromBase64String(meeting.EncryptedDataKey);
-            var dataKey = _encryption.UnwrapKey(wrappedKey, kek);
-            _dataKey = dataKey;
+            var dialog = new EncryptPasswordDialog
+            {
+                Owner = Window.GetWindow(this), IsEncryptMode = false, InitialError = error
+            };
+            if (dialog.ShowDialog() != true) return;
 
-            _decryptedTranscript = _encryption.DecryptText(meeting.Transcript, dataKey);
-            _decryptedSummary    = _encryption.DecryptText(meeting.Summary, dataKey);
-            _decryptedNotes      = _encryption.DecryptText(meeting.MyNotes, dataKey);
+            try
+            {
+                var salt = Convert.FromBase64String(meeting.EncryptionSalt);
+                var kek = _encryption.DeriveKeyFromPassword(dialog.EnteredPassword, salt);
+                var wrappedKey = Convert.FromBase64String(meeting.EncryptedDataKey);
+                var dataKey = _encryption.UnwrapKey(wrappedKey, kek);
+                _dataKey = dataKey;
 
-            // Show content in tabs (in-memory only, not saved back to DB)
-            EncryptedOverlay.Visibility = Visibility.Collapsed;
-            EncryptedBadge.Visibility = Visibility.Collapsed;
-            EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
-            TabBar.Visibility = Visibility.Visible;
-            TabChat.Visibility = Visibility.Visible;
-            if (!string.IsNullOrWhiteSpace(_decryptedTranscript))
-                ReSummarizeButton.Visibility = Visibility.Visible;
+                _decryptedTranscript = _encryption.DecryptText(meeting.Transcript, dataKey);
+                _decryptedSummary    = _encryption.DecryptText(meeting.Summary, dataKey);
+                _decryptedNotes      = _encryption.DecryptText(meeting.MyNotes, dataKey);
 
-            // Show a "locked" badge to remind user content is temporarily decrypted
-            ShowUnlockedBadge();
+                // Show content in tabs (in-memory only, not saved back to DB)
+                EncryptedOverlay.Visibility = Visibility.Collapsed;
+                EncryptedBadge.Visibility = Visibility.Collapsed;
+                EncryptMeetingCheckBox.Visibility = Visibility.Collapsed;
+                TabBar.Visibility = Visibility.Visible;
+                TabChat.Visibility = Visibility.Visible;
+                if (!string.IsNullOrWhiteSpace(_decryptedTranscript))
+                    ReSummarizeButton.Visibility = Visibility.Visible;
 
-            LoadRichText(_decryptedNotes);
-            TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(_decryptedTranscript));
-            SummaryText.Text    = AddLineSpacing(_decryptedSummary);
+                // Show a "locked" badge to remind user content is temporarily decrypted
+                ShowUnlockedBadge();
 
-            await LoadDecryptedChatHistoryAsync(_meetingVm.Id, dataKey);
-            SwitchTab(string.IsNullOrWhiteSpace(_decryptedSummary) ? "Transcript" : "Summary");
-        }
-        catch (CryptographicException)
-        {
-            System.Windows.MessageBox.Show("Incorrect password. Please try again.", "Wrong Password",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show($"Failed to decrypt: {ex.Message}", "Decryption Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+                LoadRichText(_decryptedNotes);
+                TranscriptText.Text = AddLineSpacing(ApplyTimestampFilter(_decryptedTranscript));
+                SummaryText.Text    = AddLineSpacing(_decryptedSummary);
+
+                await LoadDecryptedChatHistoryAsync(_meetingVm.Id, dataKey);
+                SwitchTab(string.IsNullOrWhiteSpace(_decryptedSummary) ? "Transcript" : "Summary");
+                return;
+            }
+            catch (CryptographicException)
+            {
+                error = "Incorrect password. Please try again.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to decrypt: {ex.Message}", "Decryption Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
         }
     }
 
@@ -333,6 +395,7 @@ public partial class MeetingDetailView : Page
         UnlockButton.Content = "🔒  Re-lock";
         UnlockButton.Click -= UnlockButton_Click;
         UnlockButton.Click += RelockButton_Click;
+        _unlockButtonSwapped = true;
     }
 
     private async void RelockButton_Click(object sender, RoutedEventArgs e)
@@ -415,6 +478,9 @@ public partial class MeetingDetailView : Page
         if (_meetingVm is null) return;
 
         bool wasEncrypted = _meetingVm.IsEncrypted;
+        // The Encrypt checkbox only matters for meetings that aren't already encrypted —
+        // a re-record of an encrypted meeting always re-encrypts regardless of its state.
+        bool encryptAfter = wasEncrypted || EncryptMeetingCheckBox.IsChecked == true;
 
         if (wasEncrypted)
         {
@@ -453,6 +519,11 @@ public partial class MeetingDetailView : Page
                 meeting.IsEncrypted      = false;
                 meeting.EncryptionSalt   = null;
                 meeting.EncryptedDataKey = null;
+                // Flag it now, before recording even starts — if the app crashes, the user
+                // navigates away, or cancels the password prompt after processing, the
+                // pending-re-encrypt banner will keep surfacing this on next load instead of
+                // silently leaving the meeting as plaintext forever.
+                meeting.PendingReEncrypt = true;
                 await _db.UpdateMeetingAsync(meeting);
 
                 // Decrypt chat messages in place
@@ -468,6 +539,7 @@ public partial class MeetingDetailView : Page
                 }
 
                 _meetingVm.IsEncrypted = false;
+                _meetingVm.PendingReEncrypt = true;
                 _meetingVm.Transcript  = _decryptedTranscript;
                 _meetingVm.Summary     = _decryptedSummary;
                 _meetingVm.MyNotes     = _decryptedNotes;
@@ -476,9 +548,10 @@ public partial class MeetingDetailView : Page
 
         var mainWindow = Window.GetWindow(this) as MainWindow;
         var (runAI, _) = GetReprocessMode();
-        // If this was an encrypted meeting, re-encrypt automatically after processing
-        // by passing encryptAfter=true — EncryptMeetingNowAsync will prompt for a new password.
-        mainWindow?.ShowRecordingView(_meetingVm, runAI, encryptAfter: wasEncrypted);
+        // Re-encrypt automatically after processing when the meeting was already encrypted,
+        // or when the user checked Encrypt for a brand-new meeting — EncryptMeetingNowAsync
+        // will prompt for a password once processing finishes.
+        mainWindow?.ShowRecordingView(_meetingVm, runAI, encryptAfter: encryptAfter);
     }
 
     private void ReprocessButton_Click(object sender, RoutedEventArgs e)

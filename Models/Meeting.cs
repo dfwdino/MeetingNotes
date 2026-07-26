@@ -46,6 +46,12 @@ public class Meeting
     public string? EncryptionSalt { get; set; }
     /// <summary>Base64-encoded wrapped data key: AES-GCM(nonce + encryptedKey + tag).</summary>
     public string? EncryptedDataKey { get; set; }
+    /// <summary>
+    /// Set when a re-record on a previously-encrypted meeting has written plaintext to the
+    /// DB and is waiting for a new password to re-encrypt it. Lets the UI warn the user if
+    /// the app closes, or the password prompt is cancelled, before that finishes.
+    /// </summary>
+    public bool PendingReEncrypt { get; set; } = false;
 
     // Soft delete — text stays in DB, only audio files are removed
     public bool IsDeleted { get; set; } = false;

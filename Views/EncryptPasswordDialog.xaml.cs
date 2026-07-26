@@ -10,6 +10,8 @@ public partial class EncryptPasswordDialog : Window
 {
     public bool IsEncryptMode { get; set; } = true;
     public string EnteredPassword { get; private set; } = string.Empty;
+    /// <summary>Error to show immediately on open — used when reopening after a wrong password.</summary>
+    public string? InitialError { get; set; }
 
     public EncryptPasswordDialog()
     {
@@ -25,7 +27,7 @@ public partial class EncryptPasswordDialog : Window
             TitleText.Text = "Encrypt this meeting";
             SubtitleText.Text =
                 "Choose a password to protect the transcript, summary, and notes. " +
-                "The audio file will be permanently deleted. " +
+                "The audio file will be deleted from disk. " +
                 "You will need this password to view the meeting content again.";
             ConfirmPanel.Visibility = Visibility.Visible;
         }
@@ -36,6 +38,10 @@ public partial class EncryptPasswordDialog : Window
             SubtitleText.Text = "Enter the password to view this meeting's content.";
             ConfirmPanel.Visibility = Visibility.Collapsed;
         }
+
+        if (!string.IsNullOrEmpty(InitialError))
+            ShowError(InitialError);
+
         PasswordBox.Focus();
     }
 

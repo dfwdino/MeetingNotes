@@ -56,6 +56,13 @@ public class DatabaseService
         }
         catch { }
 
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE Meetings ADD COLUMN PendingReEncrypt INTEGER NOT NULL DEFAULT 0");
+        }
+        catch { }
+
         // Drop unused columns and tables for existing installs
         try
         {

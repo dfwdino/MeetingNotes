@@ -14,6 +14,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -104,8 +105,25 @@
             </Grid>
         </Border>
 
+        <!-- Pending re-encrypt warning — shown when a re-record left the meeting as plaintext -->
+        <Border x:Name="PendingReEncryptBanner" Grid.Row="1" Visibility="Collapsed"
+                Background="#FF3A2A0A" BorderBrush="#FFAA7722" BorderThickness="0,0,0,1" Padding="24,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="⚠ This meeting was re-recorded while encrypted, but re-encryption didn't finish. Its content is currently stored as plain text."
+                           Foreground="#FFEFC078" FontSize="12" VerticalAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,0,12,0"/>
+                <Button Grid.Column="1" x:Name="PendingReEncryptButton" Content="🔒 Encrypt Now"
+                        Style="{DynamicResource GhostButton}" Click="PendingReEncryptButton_Click"/>
+            </Grid>
+        </Border>
+
         <!-- Tab Bar -->
-        <Border x:Name="TabBar" Grid.Row="1" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D">
+        <Border x:Name="TabBar" Grid.Row="2" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D">
             <StackPanel Orientation="Horizontal" Margin="16,0">
                 <Button x:Name="TabMyNotes" Content="My Notes"
                         Click="Tab_Click" Tag="MyNotes">
@@ -155,7 +173,7 @@
         </Border>
 
         <!-- Tab Content -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
 
             <!-- My Notes Tab -->
             <Grid x:Name="MyNotesPanel" Visibility="Collapsed">

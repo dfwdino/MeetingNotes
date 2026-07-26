@@ -76,7 +76,10 @@
             <!-- Per-meeting Whisper prompt terms — improves recognition of names/acronyms,
                  especially for accented speech. Saved on the meeting and appended to the
                  global initial prompt at transcription time. -->
-            <TextBox x:Name="PromptTermsBox" Width="580" Margin="0,14,0,0"
+            <TextBlock Text="Participants &amp; Terms (optional)" Width="580"
+                       HorizontalAlignment="Left" Margin="0,14,0,4"
+                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
+            <TextBox x:Name="PromptTermsBox" Width="580" Margin="0,0,0,0"
                      Style="{DynamicResource DarkTextBox}" FontSize="12"
                      ui:ControlHelper.PlaceholderText="Participants &amp; terms (optional) — e.g. Priya, Jörg, Acme Corp, MSIX, Q3 roadmap"
                      ToolTip="Names, companies, and acronyms likely to come up in this meeting. Whisper uses them to transcribe those words correctly — this helps a lot with accented speakers."/>
