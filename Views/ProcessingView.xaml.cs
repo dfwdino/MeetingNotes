@@ -49,6 +49,11 @@ public partial class ProcessingView : Page
         _vm.ProcessingComplete    += (_, m)   => ProcessingComplete?.Invoke(this, m);
         _vm.ErrorOccurred         += (_, err) => Dispatcher.Invoke(() => ShowError(err.message));
         _vm.WhisperSetupRequired  += (_, m)   => Dispatcher.Invoke(() => HandleWhisperSetup(m));
+        // Blocking dialog so the user sees this before ProcessingComplete (raised right
+        // after) navigates away from this page.
+        _vm.SummaryWarning        += (_, msg) => Dispatcher.Invoke(() =>
+            System.Windows.MessageBox.Show(msg, "AI Summary Skipped",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning));
 
         await _vm.ProcessMeetingAsync(_currentMeeting, _appendTranscript, _runAI, _forceTranscribe);
     }

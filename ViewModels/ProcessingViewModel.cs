@@ -250,8 +250,12 @@ public partial class ProcessingViewModel : BaseViewModel
                 SummarizingStatus = "Skipped";
                 meeting.Status = MeetingStatus.Ready;
                 await _db.UpdateMeetingAsync(meeting);
-                ProcessingComplete?.Invoke(this, meeting);
                 StatusChanged?.Invoke(this, llmWarning);
+                // Raised (and awaited by the view via a blocking dialog) before
+                // ProcessingComplete, which triggers immediate navigation away from this
+                // page — otherwise the warning is written to a page the user is no longer on.
+                SummaryWarning?.Invoke(this, llmWarning);
+                ProcessingComplete?.Invoke(this, meeting);
                 return;
             }
 
@@ -313,6 +317,7 @@ public partial class ProcessingViewModel : BaseViewModel
 
     public event EventHandler<(string message, Meeting meeting)>? ErrorOccurred;
     public event EventHandler<Meeting>? WhisperSetupRequired;
+    public event EventHandler<string>? SummaryWarning;
 
     /// <summary>
     /// Combines the global Whisper prompt with this meeting's participant/term list.

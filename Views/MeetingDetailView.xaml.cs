@@ -114,6 +114,26 @@ public partial class MeetingDetailView : Page
         ReprocessModeComboBox.Visibility = showMode ? Visibility.Visible : Visibility.Collapsed;
         ReprocessButton.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
         SplitButton.Visibility           = Visibility.Collapsed;
+
+        var hasAudio = !vm.IsEncrypted && !string.IsNullOrEmpty(vm.AudioFilePath) && File.Exists(vm.AudioFilePath);
+        PlayAudioButton.Visibility = hasAudio ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void PlayAudioButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_meetingVm?.AudioFilePath is not { } path || !File.Exists(path)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Could not open audio file: {ex.Message}", "Playback Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     // ── Encryption state helpers ──────────────────────────────────────────
@@ -181,6 +201,7 @@ public partial class MeetingDetailView : Page
         finally { _suppressNoteChange = false; }
         TranscriptText.Text = string.Empty;
         SummaryText.Text = string.Empty;
+        ChatSearchBox.Text = string.Empty;
         ChatMessages.Children.Clear();
     }
 
@@ -409,6 +430,7 @@ public partial class MeetingDetailView : Page
 
     private async Task LoadChatHistoryAsync(int meetingId)
     {
+        ChatSearchBox.Text = string.Empty;
         ChatMessages.Children.Clear();
         var messages = await _db.GetChatMessagesAsync(meetingId);
         foreach (var msg in messages)
@@ -417,6 +439,7 @@ public partial class MeetingDetailView : Page
 
     private async Task LoadDecryptedChatHistoryAsync(int meetingId, byte[] dataKey)
     {
+        ChatSearchBox.Text = string.Empty;
         ChatMessages.Children.Clear();
         var messages = await _db.GetChatMessagesAsync(meetingId);
         foreach (var msg in messages)
@@ -978,6 +1001,20 @@ public partial class MeetingDetailView : Page
     {
         if (_showTimestamps || string.IsNullOrEmpty(text)) return text;
         return LeadingTimestampRegex().Replace(text, "");
+    }
+
+    private void ChatSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var query = ChatSearchBox.Text?.Trim();
+        foreach (var child in ChatMessages.Children)
+        {
+            if (child is Border { Child: TextBlock tb } border)
+            {
+                border.Visibility = string.IsNullOrEmpty(query)
+                    || tb.Text.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
     }
 
     private UIElement AddChatBubble(string sender, string message, bool isUser)

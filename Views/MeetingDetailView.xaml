@@ -31,7 +31,14 @@
                 <TextBlock Grid.Column="0" x:Name="MetaText"
                            Foreground="#FF666666" FontSize="12"
                            VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                
+
+                <Button Grid.Column="1" x:Name="PlayAudioButton"
+                        Content="🔊  Play Audio"
+                        Style="{DynamicResource GhostButton}"
+                        ToolTip="Open this meeting's audio recording in your default audio player"
+                        Margin="0,0,8,0" Visibility="Collapsed"
+                        Click="PlayAudioButton_Click"/>
+
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
 
                     <!-- Export + Split group -->
@@ -244,16 +251,24 @@
             <!-- Chat Tab -->
             <Grid x:Name="ChatPanel" Visibility="Collapsed">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <ScrollViewer Grid.Row="0" x:Name="ChatScrollViewer"
+                <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="#FF2D2D2D" Padding="16,8">
+                    <TextBox x:Name="ChatSearchBox"
+                             Style="{DynamicResource DarkTextBox}"
+                             ui:ControlHelper.PlaceholderText="🔍 Search chat..."
+                             TextChanged="ChatSearchBox_TextChanged"/>
+                </Border>
+
+                <ScrollViewer Grid.Row="1" x:Name="ChatScrollViewer"
                               VerticalScrollBarVisibility="Auto" Padding="24,16">
                     <StackPanel x:Name="ChatMessages"/>
                 </ScrollViewer>
 
-                <Border Grid.Row="1" BorderThickness="0,1,0,0" BorderBrush="#FF2D2D2D"
+                <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="#FF2D2D2D"
                         Padding="16,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
