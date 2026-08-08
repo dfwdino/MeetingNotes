@@ -181,6 +181,18 @@ public class DatabaseService
         return rows.Select(ToListMeeting).ToList();
     }
 
+    /// <summary>All Meetings list (every folder) — same lightweight projection as <see cref="GetMeetingsForFolderAsync"/>.</summary>
+    public async Task<List<Meeting>> GetAllMeetingsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var rows = await db.Meetings
+            .Where(m => !m.IsDeleted)
+            .OrderByDescending(m => m.CreatedDate)
+            .Select(ListColumns)
+            .ToListAsync();
+        return rows.Select(ToListMeeting).ToList();
+    }
+
     /// <summary>Trash list — same lightweight projection as <see cref="GetMeetingsForFolderAsync"/>.</summary>
     public async Task<List<Meeting>> GetDeletedMeetingsAsync()
     {

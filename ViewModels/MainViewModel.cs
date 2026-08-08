@@ -157,6 +157,16 @@ public partial class MainViewModel : BaseViewModel
         SelectedMeeting = null;
     }
 
+    public async Task LoadAllMeetingsAsync()
+    {
+        foreach (var f in Folders) f.IsSelected = false;
+        SelectedFolder = null;
+        var all = await _db.GetAllMeetingsAsync();
+        Meetings = new ObservableCollection<MeetingViewModel>(
+            all.Select(m => new MeetingViewModel(m)));
+        SelectedMeeting = null;
+    }
+
     public async Task RestoreMeetingAsync(MeetingViewModel meeting)
     {
         await _db.RestoreMeetingAsync(meeting.Id);

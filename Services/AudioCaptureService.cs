@@ -37,8 +37,11 @@ public class AudioCaptureService : IDisposable
 
     private bool _isRecording;
 
-    // Silence auto-stop
-    private const float SilenceThreshold = 0.01f;
+    // Silence auto-stop. 0.01f (~-40 dBFS) was too sensitive to a mic's self-noise/AGC-boosted
+    // room tone during genuine silence, which kept resetting the timer and made auto-stop
+    // never fire (observed: 30+ min of silence, no stop). 0.05f (~-26 dBFS) sits comfortably
+    // above typical noise floors while still well below normal speech level (~0.1-0.5).
+    private const float SilenceThreshold = 0.05f;
     private DateTime _lastAudioActivity;
     private bool _autoStopFired;
     public bool AutoStopEnabled { get; set; }

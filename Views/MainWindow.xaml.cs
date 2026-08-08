@@ -13,6 +13,12 @@ public partial class MainWindow : Window
     private bool _searchVisible;
     private string _folderNameBeforeEdit = string.Empty;
 
+    // Meetings currently being processed in the background, keyed by meeting ID. Lets the
+    // user navigate away and back without losing progress or restarting the run — clicking
+    // back into a meeting that's still processing re-shows this same live page instead of a
+    // blank detail view, and starting a new run for an already-processing meeting is blocked.
+    private readonly Dictionary<int, ProcessingView> _activeProcessing = [];
+
     public MainWindow(MainViewModel vm)
     {
         InitializeComponent();
@@ -107,9 +113,10 @@ public partial class MainWindow : Window
     private async void AllMeetings_Click(object sender, MouseButtonEventArgs e)
     {
         if (IsRecordingActive()) return;
-        foreach (var f in _vm.Folders) f.IsSelected = false;
         FolderTitleText.Text = "All Meetings";
         NewMeetingButton.Visibility = Visibility.Collapsed;
+        await _vm.LoadAllMeetingsAsync();
+        MeetingList.ItemsSource = _vm.Meetings;
         ShowEmptyState();
     }
 
@@ -165,6 +172,17 @@ public partial class MainWindow : Window
             border.Tag is MeetingViewModel meeting)
         {
             _vm.SelectMeeting(meeting);
+
+            // Still processing in the background — show its live progress instead of a
+            // static detail view with no indication anything is happening.
+            if (_activeProcessing.TryGetValue(meeting.Id, out var processingPage))
+            {
+                EmptyState.Visibility = Visibility.Collapsed;
+                ContentFrame.Visibility = Visibility.Visible;
+                ContentFrame.Navigate(processingPage);
+                return;
+            }
+
             ShowMeetingDetail(meeting);
         }
     }
@@ -488,15 +506,33 @@ public partial class MainWindow : Window
     {
         EmptyState.Visibility = Visibility.Collapsed;
         ContentFrame.Visibility = Visibility.Visible;
+
+        // This meeting is already processing in the background (user navigated away and
+        // came back, or clicked Reprocess again) — show the same live run instead of
+        // starting a second one, which would race the first for the same audio file.
+        if (_activeProcessing.TryGetValue(meetingVm.Id, out var existingPage))
+        {
+            ContentFrame.Navigate(existingPage);
+            return;
+        }
+
         var page = App.GetService<ProcessingView>();
+        _activeProcessing[meetingVm.Id] = page;
         page.ProcessingComplete += (_, meeting) =>
         {
+            _activeProcessing.Remove(meeting.Id);
             _ = Dispatcher.InvokeAsync(async () =>
             {
                 await _vm.RefreshMeetingAsync(meeting.Id);
                 MeetingList.ItemsSource = _vm.Meetings;
                 var vm = _vm.Meetings.FirstOrDefault(m => m.Id == meeting.Id);
-                if (vm is not null)
+                if (vm is null) return;
+
+                // Only jump the user over to the finished meeting if they're still
+                // watching this exact processing run. If they navigated elsewhere while it
+                // finished in the background, leave them where they are — the meeting list
+                // now reflects the Ready status and they can open it when they choose to.
+                if (ReferenceEquals(ContentFrame.Content, page))
                 {
                     var detailPage = ShowMeetingDetail(vm);
                     if (encryptAfter)
