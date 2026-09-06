@@ -3,6 +3,10 @@ using MeetingNotes.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WpfTextBoxBase = System.Windows.Controls.Primitives.TextBoxBase;
+using WpfSelector = System.Windows.Controls.Primitives.Selector;
+using WpfToggleButton = System.Windows.Controls.Primitives.ToggleButton;
+using WpfBrush = System.Windows.Media.Brush;
 using WpfColor = System.Windows.Media.Color;
 using WpfMsgBox = System.Windows.MessageBox;
 
@@ -12,14 +16,67 @@ public partial class SettingsView : Page
 {
     private readonly SettingsViewModel _vm;
 
+    // True while controls are being populated in code, so those programmatic
+    // changes don't mark the form dirty and re-enable the Save button.
+    private bool _suppressDirty;
+    private WpfBrush? _saveButtonDefaultBrush;
+
     public SettingsView(SettingsViewModel vm)
     {
         InitializeComponent();
         _vm = vm;
+        _saveButtonDefaultBrush = SaveButton.Background;
         LoadControls();
+
+        // One set of bubbling handlers catches a change on any TextBox, ComboBox
+        // or CheckBox on the page without wiring each control individually.
+        AddHandler(WpfTextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnySettingChanged), true);
+        AddHandler(WpfSelector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySettingChanged), true);
+        AddHandler(WpfToggleButton.CheckedEvent, new RoutedEventHandler(OnAnySettingChanged), true);
+        AddHandler(WpfToggleButton.UncheckedEvent, new RoutedEventHandler(OnAnySettingChanged), true);
+    }
+
+    private void OnAnySettingChanged(object sender, TextChangedEventArgs e) => MarkDirty();
+    private void OnAnySettingChanged(object sender, SelectionChangedEventArgs e) => MarkDirty();
+    private void OnAnySettingChanged(object sender, RoutedEventArgs e) => MarkDirty();
+
+    private void MarkDirty()
+    {
+        if (_suppressDirty) return;
+        SetSaved(false);
+    }
+
+    /// <summary>
+    /// Toggles the Save button between the normal "Save Settings" state and the
+    /// greyed-out "Saved" state shown until the user changes something again.
+    /// </summary>
+    private void SetSaved(bool saved)
+    {
+        SaveButton.IsEnabled = !saved;
+        SaveButton.Content   = saved ? "✓  Saved" : "Save Settings";
+        SaveButton.Background = saved
+            ? new SolidColorBrush(WpfColor.FromRgb(58, 58, 58))
+            : _saveButtonDefaultBrush;
+        SaveButton.Foreground = new SolidColorBrush(saved
+            ? WpfColor.FromRgb(150, 150, 150)
+            : WpfColor.FromRgb(255, 255, 255));
     }
 
     private void LoadControls()
+    {
+        var prevSuppress = _suppressDirty;
+        _suppressDirty = true;
+        try
+        {
+            LoadControlsCore();
+        }
+        finally
+        {
+            _suppressDirty = prevSuppress;
+        }
+    }
+
+    private void LoadControlsCore()
     {
         WhisperModelBox.ItemsSource = _vm.WhisperModels;
         WhisperModelBox.SelectedItem = _vm.WhisperModel;
@@ -133,6 +190,20 @@ public partial class SettingsView : Page
 
     private async Task FetchOllamaModelsAsync(bool showStatus)
     {
+        var prevSuppress = _suppressDirty;
+        _suppressDirty = true;
+        try
+        {
+            await FetchOllamaModelsCoreAsync(showStatus);
+        }
+        finally
+        {
+            _suppressDirty = prevSuppress;
+        }
+    }
+
+    private async Task FetchOllamaModelsCoreAsync(bool showStatus)
+    {
         _vm.OllamaServerUrl = OllamaUrlBox.Text;
 
         if (showStatus)
@@ -238,6 +309,20 @@ public partial class SettingsView : Page
     }
 
     private async Task FetchLmStudioModelsAsync(bool showStatus)
+    {
+        var prevSuppress = _suppressDirty;
+        _suppressDirty = true;
+        try
+        {
+            await FetchLmStudioModelsCoreAsync(showStatus);
+        }
+        finally
+        {
+            _suppressDirty = prevSuppress;
+        }
+    }
+
+    private async Task FetchLmStudioModelsCoreAsync(bool showStatus)
     {
         _vm.LmStudioServerUrl = LmStudioUrlBox.Text;
         _vm.LmStudioApiKey = LmStudioApiKeyBox.Text;
@@ -476,17 +561,24 @@ public partial class SettingsView : Page
         _vm.LogToFile = LogToFileBox.IsChecked == true;
         _vm.LogFolder = LogFolderBox.Text;
 
+        var prevSuppress = _suppressDirty;
+        _suppressDirty = true;
         try
         {
             await _vm.SaveAsync();
             App.ApplyTheme(_vm.Theme);
             SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(255, 255, 255));
             SaveStatusText.Text = "✓  Settings saved";
+            SetSaved(true);   // greys the button out until the next change
         }
         catch (Exception ex)
         {
             SaveStatusText.Foreground = new SolidColorBrush(WpfColor.FromRgb(196, 43, 28));
             SaveStatusText.Text = $"✗  Save failed: {ex.Message}";
+        }
+        finally
+        {
+            _suppressDirty = prevSuppress;
         }
 
         SaveStatusText.Visibility = Visibility.Visible;

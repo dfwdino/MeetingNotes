@@ -12,16 +12,26 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="1" />
-            <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="1"/>
+            <ColumnDefinition Width="220" MinWidth="160" MaxWidth="520"/>
+            <ColumnDefinition Width="6" />
+            <ColumnDefinition Width="300" MinWidth="220" MaxWidth="720"/>
+            <ColumnDefinition Width="6"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left Border Lines -->
-        <Rectangle Grid.Column="1" Fill="{DynamicResource SeparatorBrush}"/>
-        <Rectangle Grid.Column="3" Fill="{DynamicResource SeparatorBrush}"/>
+        <!-- Left Border Lines + drag handles to resize the folder / meeting-list columns -->
+        <Rectangle Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                   Fill="{DynamicResource SeparatorBrush}"/>
+        <GridSplitter x:Name="SidebarSplitter" Grid.Column="1"
+                      Width="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="Transparent" Cursor="SizeWE"
+                      ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"/>
+        <Rectangle Grid.Column="3" Width="1" HorizontalAlignment="Center"
+                   Fill="{DynamicResource SeparatorBrush}"/>
+        <GridSplitter x:Name="ListSplitter" Grid.Column="3"
+                      Width="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="Transparent" Cursor="SizeWE"
+                      ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"/>
 
         <!-- ══════════════════════════════════════ -->
         <!-- SIDEBAR                                -->
@@ -294,10 +304,16 @@
                             HorizontalAlignment="Left"
                             MouseEnter="BlockedButton_MouseEnter"
                             Click="SettingsButton_Click"/>
-                    <Button Content="ℹ" Style="{DynamicResource GhostButton}"
-                            HorizontalAlignment="Right" Width="32" Padding="0"
-                            FontSize="15" ToolTip="About"
-                            Click="AboutButton_Click"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="🤖" Style="{DynamicResource GhostButton}"
+                                Width="32" Padding="0" FontSize="14"
+                                ToolTip="About AI results"
+                                Click="AiResultsButton_Click"/>
+                        <Button Content="ℹ" Style="{DynamicResource GhostButton}"
+                                Width="32" Padding="0" Margin="2,0,0,0"
+                                FontSize="15" ToolTip="About"
+                                Click="AboutButton_Click"/>
+                    </StackPanel>
                 </Grid>
             </Border>
             </Grid><!-- /SidebarContent -->
