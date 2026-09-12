@@ -496,7 +496,7 @@
                            VerticalAlignment="Center" Margin="0,0,16,0" Visibility="Collapsed"/>
                 <Button Content="Cancel" Style="{DynamicResource GhostButton}"
                         Margin="0,0,8,0" Click="CancelButton_Click"/>
-                <Button Content="Save Settings" Style="{DynamicResource PrimaryButton}"
+                <Button x:Name="SaveButton" Content="Save Settings" Style="{DynamicResource PrimaryButton}"
                         Click="SaveButton_Click"/>
             </StackPanel>
         </Border>

@@ -77,6 +77,10 @@ public partial class MeetingDetailView : Page
                             ? vm.DateDisplay
                             : $"{vm.DateDisplay}  ({vm.DurationDisplay})";
 
+        // Collapse before the default-tab switch below; SwitchTab() re-shows it
+        // when the Transcript tab is the one selected on load.
+        SplitButton.Visibility = Visibility.Collapsed;
+
         if (vm.IsEncrypted)
         {
             ShowEncryptedState();
@@ -113,7 +117,6 @@ public partial class MeetingDetailView : Page
         SepAfterEncrypt.Visibility       = showMode ? Visibility.Visible : Visibility.Collapsed;
         ReprocessModeComboBox.Visibility = showMode ? Visibility.Visible : Visibility.Collapsed;
         ReprocessButton.Visibility       = showActions ? Visibility.Visible : Visibility.Collapsed;
-        SplitButton.Visibility           = Visibility.Collapsed;
 
         var hasAudio = !vm.IsEncrypted && !string.IsNullOrEmpty(vm.AudioFilePath) && File.Exists(vm.AudioFilePath);
         PlayAudioButton.Visibility = hasAudio ? Visibility.Visible : Visibility.Collapsed;

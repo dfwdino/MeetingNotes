@@ -17,50 +17,50 @@
             <Image Source="/MeetingNotes.ico" Width="42" Height="42"
                    VerticalAlignment="Center" Margin="0,0,12,0"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
-            <TextBlock Text="Meeting Notes" Foreground="White"
+            <TextBlock Text="Meeting Notes" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="26" FontWeight="SemiBold" FontFamily="Segoe UI"
                        VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Version -->
         <TextBlock x:Name="VersionText" HorizontalAlignment="Center"
-                   Foreground="#FF888888" FontSize="13" FontFamily="Segoe UI"
+                   Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13" FontFamily="Segoe UI"
                    Margin="0,0,0,28"/>
 
         <!-- Divider -->
-        <Rectangle Height="1" Fill="#FF2D2D2D" Margin="0,0,0,24"/>
+        <Rectangle Height="1" Fill="{DynamicResource SeparatorBrush}" Margin="0,0,0,24"/>
 
         <!-- Author -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
-            <TextBlock Text="Developed by " Foreground="#FF888888"
+            <TextBlock Text="Developed by " Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center"/>
-            <TextBlock Text="Shane" Foreground="#FFE0E0E0"
+            <TextBlock Text="Shane" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="13" FontWeight="SemiBold" FontFamily="Segoe UI"
                        VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- GitHub link -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-            <TextBlock Text="GitHub: " Foreground="#FF888888"
+            <TextBlock Text="GitHub: " Foreground="{DynamicResource TextSecondaryBrush}"
                        FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center"/>
             <TextBlock VerticalAlignment="Center">
                 <Hyperlink x:Name="GitHubLink" RequestNavigate="GitHubLink_RequestNavigate"
                            NavigateUri="https://github.com/dfwdino/MeetingNotes"
-                           Foreground="#FF3A9EFF">
+                           Foreground="{DynamicResource AccentBrush}">
                     github.com/dfwdino/MeetingNotes
                 </Hyperlink>
             </TextBlock>
-            
+
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,25">
-            <TextBlock Text="Buy Me Coffee: " Foreground="#FF888888"
+            <TextBlock Text="Buy Me Coffee: " Foreground="{DynamicResource TextSecondaryBrush}"
 FontSize="13" FontFamily="Segoe UI" VerticalAlignment="Center"/>
             <TextBlock VerticalAlignment="Center">
-    
+
 <Hyperlink x:Name="BuyMeACoffeeLink" RequestNavigate="GitHubLink_RequestNavigate"
     NavigateUri="https://buymeacoffee.com/nccapps"
-    Foreground="#FF3A9EFF">
+    Foreground="{DynamicResource AccentBrush}">
                 buymeacoffee.com/nccapps
     </Hyperlink>
             </TextBlock>

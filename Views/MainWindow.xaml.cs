@@ -11,6 +11,11 @@ public partial class MainWindow : Window
     private bool _listPanelCollapsed;
     private bool _sidebarCollapsed;
     private bool _searchVisible;
+
+    // Column widths remembered across a collapse/expand toggle so a user-dragged
+    // size is restored instead of snapping back to the original default.
+    private GridLength _sidebarColumnWidth = new(220);
+    private GridLength _listColumnWidth = new(300);
     private string _folderNameBeforeEdit = string.Empty;
 
     // Meetings currently being processed in the background, keyed by meeting ID. Lets the
@@ -308,6 +313,11 @@ public partial class MainWindow : Window
         new AboutDialog { Owner = this }.ShowDialog();
     }
 
+    private void AiResultsButton_Click(object sender, RoutedEventArgs e)
+    {
+        new AiResultsDialog { Owner = this }.ShowDialog();
+    }
+
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         // Block settings navigation during an active recording
@@ -575,8 +585,22 @@ public partial class MainWindow : Window
         _listPanelCollapsed = collapse;
         if (MeetingListPanel.Parent is System.Windows.Controls.Grid mainGrid)
         {
-            mainGrid.ColumnDefinitions[2].Width = collapse ? new GridLength(0) : new GridLength(300);
-            mainGrid.ColumnDefinitions[3].Width = collapse ? new GridLength(0) : new GridLength(1);
+            var listCol  = mainGrid.ColumnDefinitions[2];
+            var splitCol = mainGrid.ColumnDefinitions[3];
+            if (collapse)
+            {
+                if (listCol.Width.IsAbsolute && listCol.Width.Value > 0)
+                    _listColumnWidth = listCol.Width;
+                listCol.MinWidth = 0;
+                listCol.Width  = new GridLength(0);
+                splitCol.Width = new GridLength(0);
+            }
+            else
+            {
+                listCol.MinWidth = 220;
+                listCol.Width  = _listColumnWidth;
+                splitCol.Width = new GridLength(6);
+            }
         }
         // Collapse button lives inside the panel — hide it when panel hides
         MeetingListPanel.Visibility = collapse ? Visibility.Collapsed : Visibility.Visible;
@@ -589,10 +613,24 @@ public partial class MainWindow : Window
         _sidebarCollapsed = collapse;
         if (MeetingListPanel.Parent is System.Windows.Controls.Grid mainGrid)
         {
-            // Collapse to a thin 32px strip so the expand button stays visible
-            // without overlapping the meeting list panel at all
-            mainGrid.ColumnDefinitions[0].Width = collapse ? new GridLength(32) : new GridLength(220);
-            mainGrid.ColumnDefinitions[1].Width = new GridLength(1);
+            var sideCol  = mainGrid.ColumnDefinitions[0];
+            var splitCol = mainGrid.ColumnDefinitions[1];
+            if (collapse)
+            {
+                if (sideCol.Width.IsAbsolute && sideCol.Width.Value > 32)
+                    _sidebarColumnWidth = sideCol.Width;
+                // Collapse to a thin 32px strip so the expand button stays visible
+                // without overlapping the meeting list panel at all
+                sideCol.MinWidth = 0;
+                sideCol.Width  = new GridLength(32);
+                splitCol.Width = new GridLength(0);
+            }
+            else
+            {
+                sideCol.MinWidth = 160;
+                sideCol.Width  = _sidebarColumnWidth;
+                splitCol.Width = new GridLength(6);
+            }
         }
         SidebarContent.Visibility        = collapse ? Visibility.Collapsed : Visibility.Visible;
         SidebarCollapsedStrip.Visibility = collapse ? Visibility.Visible   : Visibility.Collapsed;
