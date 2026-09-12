@@ -2,17 +2,40 @@
 <!--
   WiX v4 installer for NCCA Meeting Notes.
   Build via GitHub Actions - see .github/workflows/dotnet.yml.
+
+  Microsoft Store (EXE/MSI submission) notes:
+  The Store's certification scan reads the Add/Remove Programs entry this MSI
+  creates and matches it against the Partner Center listing. DisplayName must
+  equal the reserved app name and Publisher must equal the publisher display
+  name ("dfwDino", which is also the signing certificate subject CN=dfwDino).
+  Manufacturer below drives ARP Publisher - do NOT change it to a personal name.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
 
   <Package Name="NCCA Meeting Notes"
            Language="1033"
            Version="$(var.Version)"
-           Manufacturer="Shane Newsom"
+           Manufacturer="dfwDino"
+           Scope="perMachine"
            UpgradeCode="A3F7B2C8-4D5E-4F7A-8B9C-0D1E2F3A4B5C">
+
+    <SummaryInformation Description="Record, transcribe, and summarize meetings using local AI." />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of NCCA Meeting Notes is already installed." />
     <MediaTemplate EmbedCab="yes" />
+
+    <!-- Add/Remove Programs metadata. The Store scan wants a complete entry:
+         a product icon, a publisher, and working support/about links. -->
+    <Icon Id="AppIcon.exe" SourceFile="$(var.PublishDir)\MeetingNotes.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.exe" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/dfwdino/MeetingNotes/issues" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/dfwdino/MeetingNotes" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/dfwdino/MeetingNotes/releases" />
+    <Property Id="ARPCONTACT" Value="dfwDino" />
+    <!-- Single clean uninstall entry: no Modify/Repair buttons for the scan to
+         mistake for extra bundled products. -->
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
 
     <Feature Id="Main" Level="1">
       <ComponentGroupRef Id="AppFiles" />
@@ -30,6 +53,7 @@
     <Component Id="StartMenuShortcut" Directory="ShortcutFolder" Guid="*">
       <Shortcut Id="AppShortcut"
                 Name="NCCA Meeting Notes"
+                Description="Record, transcribe, and summarize meetings using local AI."
                 Target="[INSTALLFOLDER]MeetingNotes.exe"
                 WorkingDirectory="INSTALLFOLDER" />
       <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />

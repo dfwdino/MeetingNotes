@@ -46,7 +46,14 @@ jobs:
     - name: Zip Windows build
       run: Compress-Archive -Path ${{ env.ProjectLocation }}* -DestinationPath "${{ env.APP_NAME }} - ${{ env.VERSION }}.zip"
     - name: Publish Windows app (for MSI)
-      run: dotnet publish MeetingNotes.csproj -r win-x64 --no-restore -c Release -o publish\ --self-contained false
+      # Self-contained ON PURPOSE: the MSI must not depend on the .NET 10 Desktop
+      # Runtime already being present, or the app installs fine on a clean machine
+      # and then fails to launch - a Microsoft Store certification failure.
+      # This is the MSI path only and has NO bearing on the MSIX 10.2.4.2 policy
+      # flag, which is a packaging-policy issue, not a runtime-bundling one.
+      # --no-restore is intentionally omitted: the restore above runs framework-
+      # dependent and does not pull the win-x64 runtime pack self-contained needs.
+      run: dotnet publish MeetingNotes.csproj -r win-x64 -c Release -o publish\ --self-contained true
     - name: Derive MSI-compatible version
       id: msi_ver
       shell: pwsh
