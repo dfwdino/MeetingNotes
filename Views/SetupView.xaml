@@ -60,6 +60,7 @@
 
         <TextBlock x:Name="StatusText" Foreground="#FF4CAF50"
                    FontSize="12" HorizontalAlignment="Center"
+                   TextAlignment="Center" TextWrapping="Wrap"
                    Margin="0,16,0,0" Visibility="Collapsed"/>
 
         <TextBlock Text="This only happens once. The model is saved locally and reused."

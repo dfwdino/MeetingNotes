@@ -107,6 +107,15 @@ public partial class App : System.Windows.Application
                     await Task.Run(() => transcription.LoadModel(modelPath));
                     return true;  // model loaded successfully
                 }
+                catch (Exception ex) when (TranscriptionService.IsNativeLoadFailure(ex))
+                {
+                    // The model is fine; the native runtime won't load on this PC. Re-downloading
+                    // can't fix that, so keep the file and let the app open (recording and notes
+                    // still work; transcription will report the same error when attempted).
+                    System.Windows.MessageBox.Show(TranscriptionService.NativeLoadFailureMessage,
+                        "Meeting Notes", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return true;
+                }
                 catch
                 {
                     // File exists but is unusable — delete it so setup re-downloads it

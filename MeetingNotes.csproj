@@ -11,16 +11,16 @@
     <!-- Only copy English satellite assemblies — removes the 100+ language folders -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>MeetingNotes.ico</ApplicationIcon>
-    <Version>1.2026.09.11</Version>
-    <AssemblyVersion>1.2026.09.11</AssemblyVersion>
-    <FileVersion>1.2026.09.11</FileVersion>
+    <Version>1.2026.09.30</Version>
+    <AssemblyVersion>1.2026.09.30</AssemblyVersion>
+    <FileVersion>1.2026.09.30</FileVersion>
     <Company>Shane</Company>
     <Product>Meeting Notes</Product>
   </PropertyGroup>
 
-  <!-- MSIX Store publish: dotnet publish -c Release -r win-x64 -p:WindowsPackageType=MSIX
-       WindowsPackageType is intentionally NOT set here so normal builds and GitHub CI
-       continue to produce a plain exe. Pass it only when publishing for the Store. -->
+  <!-- Microsoft Store MSIX is built by hand, NOT via -p:WindowsPackageType=MSIX:
+       self-contained publish output is copied into MsixStage\ (which holds the final
+       AppxManifest.xml), packed with makeappx and signed with signtool. See CLAUDE.md. -->
 
   <ItemGroup>
     <!-- settings.json ships with the app as a seed template.
@@ -38,6 +38,15 @@
     <!-- MSIX tile/logo image assets — create these PNGs before submitting to the Store.
          See the comment block in Package.appxmanifest for required sizes. -->
     <Content Include="Assets\**" Condition="Exists('Assets')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Whisper.net's native DLLs (whisper.dll, ggml-*.dll) import the Visual C++ runtime
+         (MSVCP140, VCRUNTIME140, VCRUNTIME140_1, VCOMP140). Machines without the VC++
+         Redistributable fail with "Cannot load the library on this platform using NativeLibrary".
+         Ship the runtime app-local, next to whisper.dll — the loader searches the loaded DLL's
+         own folder for its dependencies, not the exe folder. -->
+    <Content Include="NativeDeps\win-x64\*.dll">
+      <Link>runtimes\win-x64\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

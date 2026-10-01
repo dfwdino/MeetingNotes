@@ -41,6 +41,21 @@ public class TranscriptionService
         return modelPath;
     }
 
+    /// <summary>
+    /// True when <paramref name="ex"/> means Whisper's native runtime (whisper.dll and its
+    /// C++ dependencies) could not be loaded — a machine problem, not a bad model file.
+    /// The downloaded model must NOT be deleted in this case; re-downloading can't fix it.
+    /// </summary>
+    public static bool IsNativeLoadFailure(Exception ex) =>
+        ex is DllNotFoundException or BadImageFormatException
+        || ex.Message.Contains("NativeLibrary", StringComparison.OrdinalIgnoreCase)
+        || (ex.InnerException is not null && IsNativeLoadFailure(ex.InnerException));
+
+    public const string NativeLoadFailureMessage =
+        "Meeting Notes couldn't start its speech-to-text engine on this PC. " +
+        "Please reinstall Meeting Notes using the latest version. If it still happens, " +
+        "install the Microsoft Visual C++ Redistributable (x64) from https://aka.ms/vs/17/release/vc_redist.x64.exe and restart.";
+
     public void LoadModel(string modelPath)
     {
         if (_loadedModelPath == modelPath) return;

@@ -53,14 +53,22 @@ public partial class SetupView : Window
         }
         catch (Exception ex)
         {
-            // Clean up any partial/corrupt file so the user can retry cleanly
-            var modelPath = System.IO.Path.Combine(
-                _settings.WhisperCacheFolder,
-                $"ggml-{_settings.WhisperModel.ToLower()}.bin");
-            try { if (System.IO.File.Exists(modelPath)) System.IO.File.Delete(modelPath); } catch { }
+            var nativeFailure = TranscriptionService.IsNativeLoadFailure(ex);
+
+            // Clean up any partial/corrupt file so the user can retry cleanly — but keep a
+            // good download when the failure is the native runtime, not the model file.
+            if (!nativeFailure)
+            {
+                var modelPath = System.IO.Path.Combine(
+                    _settings.WhisperCacheFolder,
+                    $"ggml-{_settings.WhisperModel.ToLower()}.bin");
+                try { if (System.IO.File.Exists(modelPath)) System.IO.File.Delete(modelPath); } catch { }
+            }
 
             ProgressPanel.Visibility = Visibility.Collapsed;
-            StatusText.Text = $"Error: {ex.Message}";
+            StatusText.Text = nativeFailure
+                ? TranscriptionService.NativeLoadFailureMessage
+                : $"Error: {ex.Message}";
             StatusText.Foreground = System.Windows.Media.Brushes.Red;
             StatusText.Visibility = Visibility.Visible;
             DownloadButton.Content = "Download & Get Started";
